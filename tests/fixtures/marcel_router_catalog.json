@@ -1,0 +1,38 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "openai/gpt-4.1-mini",
+      "object": "model",
+      "marcel": {
+        "capabilities": {"chat": true, "streaming": true, "tools": true, "json_schema": true},
+        "modalities": ["text", "image"],
+        "context_window": 1000000,
+        "max_output_tokens": 32768,
+        "pricing": {"input_per_million": 0.4, "output_per_million": 1.6}
+      }
+    },
+    {
+      "id": "anthropic/claude-haiku-4-5",
+      "object": "model",
+      "marcel": {
+        "capabilities": {"chat": true, "streaming": true, "tools": true, "json_schema": true},
+        "modalities": ["text", "image"],
+        "context_window": 200000,
+        "max_output_tokens": 8192,
+        "pricing": {"input_per_million": 0.8, "output_per_million": 4.0}
+      }
+    },
+    {
+      "id": "mistral/ministral-8b",
+      "object": "model",
+      "marcel": {
+        "capabilities": {"chat": true},
+        "modalities": ["text"],
+        "context_window": 128000,
+        "max_output_tokens": 8192,
+        "pricing": {"input_per_million": 0.1, "output_per_million": 0.1}
+      }
+    }
+  ]
+}

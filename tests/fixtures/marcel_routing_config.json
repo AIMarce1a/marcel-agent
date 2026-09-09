@@ -1,0 +1,22 @@
+{
+  "marcel": {
+    "routing": {
+      "strategy": "cheapest_capable",
+      "allow_model_override": true,
+      "require_tool_support": true
+    }
+  },
+  "delegation": {
+    "workers": {
+      "coding": {
+        "activity": "coding",
+        "toolsets": ["filesystem", "terminal"],
+        "model": "openai/gpt-4.1-mini",
+        "fallback_models": ["anthropic/claude-haiku-4-5"]
+      },
+      "general": {
+        "activity": "general"
+      }
+    }
+  }
+}

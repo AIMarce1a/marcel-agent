@@ -1,0 +1,7 @@
+name: gemini
+version: 1.0.0
+description: "Google Gemini image generation backend. Saves generated images to the Marcel image cache."
+author: Marcel
+kind: backend
+requires_env:
+  - GEMINI_API_KEY

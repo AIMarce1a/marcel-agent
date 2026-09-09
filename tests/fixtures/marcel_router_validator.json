@@ -1,0 +1,116 @@
+{
+  "responses": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "body": {"status": "ok", "version": "1.0.0"}
+    },
+    {
+      "method": "GET",
+      "path": "/v1/models",
+      "status": 200,
+      "body": {
+        "object": "list",
+        "data": [{
+          "id": "demo/chat",
+          "object": "model",
+          "created": 1,
+          "owned_by": "demo",
+          "marcel": {
+            "provider": "demo",
+            "modalities": ["text"],
+            "capabilities": {
+              "chat": true,
+              "streaming": true,
+              "tools": true,
+              "json_schema": true
+            }
+          }
+        }]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "status": 200,
+      "body": {
+        "id": "chat_1",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "demo/chat",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "ok"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "status": 200,
+      "headers": {"content-type": "text/event-stream"},
+      "body": "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":null}]}\n\ndata: [DONE]\n\n"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "status": 200,
+      "body": {
+        "id": "chat_tool",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "demo/chat",
+        "choices": [{
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "tool_calls": [{
+              "id": "call_1",
+              "type": "function",
+              "function": {"name": "echo", "arguments": "{}"}
+            }]
+          },
+          "finish_reason": "tool_calls"
+        }],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "status": 200,
+      "body": {
+        "id": "chat_tool_result",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "demo/chat",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "tool ok"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3}
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "status": 200,
+      "body": {
+        "id": "chat_json",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "demo/chat",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "{\"ok\":true}"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v1/models",
+      "status": 401,
+      "body": {"error": {"message": "missing bearer token", "type": "authentication_error", "param": null, "code": "unauthorized"}}
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "status": 404,
+      "body": {"error": {"message": "unknown model", "type": "invalid_request_error", "param": "model", "code": "model_not_found"}}
+    }
+  ]
+}
