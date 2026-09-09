@@ -1,0 +1,5 @@
+[console_scripts]
+marcel = marcel_cli.main:main
+marcel-acp = acp_adapter.entry:main
+marcel-agent = run_agent:main
+marcel-router-validate = marcel_cli.marcel_router_validator:main

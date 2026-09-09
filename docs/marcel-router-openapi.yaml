@@ -1,0 +1,376 @@
+openapi: 3.1.0
+info:
+  title: Marcel Router API
+  version: 1.0.0
+  description: |
+    OpenAI-compatible, client-routed gateway contract for Marcel providers.
+    All paths are rooted at the router origin. Model IDs are namespaced as
+    `provider/model`; clients choose the target deterministically before sending
+    a request.
+servers:
+  - url: https://router.marcel.ai
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      summary: Return router liveness and contract version
+      responses:
+        '200':
+          description: Router is available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /v1/models:
+    get:
+      operationId: listModels
+      summary: List models available to the caller
+      responses:
+        '200':
+          description: An OpenAI-style model list with Marcel metadata.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [object, data]
+                properties:
+                  object: { const: list }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Model'
+        '401':
+          $ref: '#/components/responses/Error'
+  /v1/chat/completions:
+    post:
+      operationId: createChatCompletion
+      summary: Create a chat completion
+      description: |
+        Set `stream` to true to receive `text/event-stream`. Each SSE `data:`
+        value is a ChatCompletionChunk; the stream terminates with
+        `data: [DONE]`. Tool calls are emitted in `delta.tool_calls` and may be
+        incrementally assembled by `index`. A final chunk may include `usage`
+        when `stream_options.include_usage` is true.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: Completion or an SSE stream, according to `stream`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletion'
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                chunk:
+                  value: "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}]}\n\n"
+                done:
+                  value: "data: [DONE]\n\n"
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+  /v1/images/generations:
+    post:
+      operationId: createImageGeneration
+      summary: Create an image-generation job or result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaGenerationRequest'
+      responses:
+        '200':
+          description: Generation completed synchronously.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGeneration'
+        '202':
+          description: Generation accepted; poll the returned job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /v1/videos/generations:
+    post:
+      operationId: createVideoGeneration
+      summary: Create an asynchronous video-generation job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaGenerationRequest'
+      responses:
+        '202':
+          description: Generation accepted; poll the returned job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /v1/jobs/{job_id}:
+    get:
+      operationId: getJob
+      summary: Retrieve an image or video generation job
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Current job state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+  responses:
+    Error:
+      description: OpenAI-compatible error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status: { const: ok }
+        version: { type: string, example: 1.0.0 }
+    Model:
+      type: object
+      required: [id, object, created, owned_by, marcel]
+      properties:
+        id:
+          type: string
+          pattern: '^[^/\s]+/.+$'
+          example: openai/gpt-4o-mini
+        object: { const: model }
+        created: { type: integer, format: int64 }
+        owned_by: { type: string, example: openai }
+        marcel:
+          $ref: '#/components/schemas/MarcelModelMetadata'
+    MarcelModelMetadata:
+      type: object
+      required: [provider, modalities, capabilities]
+      properties:
+        provider: { type: string, example: openai }
+        modalities:
+          type: array
+          items: { type: string, enum: [text, image, video] }
+        capabilities:
+          type: object
+          properties:
+            chat: { type: boolean }
+            streaming: { type: boolean }
+            tools: { type: boolean }
+            json_schema: { type: boolean }
+            image_generation: { type: boolean }
+            video_generation: { type: boolean }
+        context_window: { type: integer }
+        max_output_tokens: { type: integer }
+        pricing:
+          type: object
+          additionalProperties: true
+    ChatCompletionRequest:
+      type: object
+      required: [model, messages]
+      properties:
+        model: { type: string, pattern: '^[^/\s]+/.+$' }
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        stream: { type: boolean, default: false }
+        stream_options:
+          type: object
+          properties:
+            include_usage: { type: boolean, default: false }
+        temperature: { type: number, minimum: 0, maximum: 2 }
+        max_tokens: { type: integer, minimum: 1 }
+        tools:
+          type: array
+          items: { $ref: '#/components/schemas/Tool' }
+        tool_choice:
+          oneOf:
+            - type: string
+              enum: [none, auto, required]
+            - type: object
+              required: [type, function]
+              properties:
+                type: { const: function }
+                function:
+                  type: object
+                  required: [name]
+                  properties: { name: { type: string } }
+        response_format:
+          oneOf:
+            - type: object
+              required: [type]
+              properties: { type: { enum: [text, json_object] } }
+            - type: object
+              required: [type, json_schema]
+              properties:
+                type: { const: json_schema }
+                json_schema:
+                  type: object
+                  required: [name, schema]
+                  properties:
+                    name: { type: string }
+                    description: { type: string }
+                    strict: { type: boolean }
+                    schema: { type: object, additionalProperties: true }
+    ChatMessage:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [system, developer, user, assistant, tool] }
+        content:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: object, additionalProperties: true }
+        name: { type: string }
+        tool_call_id: { type: string }
+        tool_calls:
+          type: array
+          items: { $ref: '#/components/schemas/ToolCall' }
+    Tool:
+      type: object
+      required: [type, function]
+      properties:
+        type: { const: function }
+        function:
+          type: object
+          required: [name, parameters]
+          properties:
+            name: { type: string }
+            description: { type: string }
+            parameters: { type: object, additionalProperties: true }
+            strict: { type: boolean }
+    ToolCall:
+      type: object
+      required: [id, type, function]
+      properties:
+        id: { type: string }
+        type: { const: function }
+        function:
+          type: object
+          required: [name, arguments]
+          properties:
+            name: { type: string }
+            arguments: { type: string, description: JSON-encoded function arguments }
+    ChatCompletion:
+      type: object
+      required: [id, object, created, model, choices, usage]
+      properties:
+        id: { type: string }
+        object: { const: chat.completion }
+        created: { type: integer, format: int64 }
+        model: { type: string }
+        choices:
+          type: array
+          items:
+            type: object
+            required: [index, message, finish_reason]
+            properties:
+              index: { type: integer }
+              message: { $ref: '#/components/schemas/ChatMessage' }
+              finish_reason: { type: [string, 'null'], enum: [stop, length, tool_calls, content_filter, null] }
+        usage: { $ref: '#/components/schemas/Usage' }
+    Usage:
+      type: object
+      required: [prompt_tokens, completion_tokens, total_tokens]
+      properties:
+        prompt_tokens: { type: integer }
+        completion_tokens: { type: integer }
+        total_tokens: { type: integer }
+    MediaGenerationRequest:
+      type: object
+      required: [model, prompt]
+      properties:
+        model: { type: string, pattern: '^[^/\s]+/.+$' }
+        prompt: { type: string, minLength: 1 }
+        n: { type: integer, minimum: 1, default: 1 }
+        size: { type: string, example: 1024x1024 }
+        response_format: { type: string, enum: [url, b64_json], default: url }
+    ImageGeneration:
+      type: object
+      required: [created, data]
+      properties:
+        created: { type: integer, format: int64 }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              url: { type: string, format: uri }
+              b64_json: { type: string }
+              revised_prompt: { type: string }
+    Job:
+      type: object
+      required: [id, object, status, model, created_at]
+      properties:
+        id: { type: string }
+        object: { const: job }
+        status: { type: string, enum: [queued, running, succeeded, failed, cancelled] }
+        model: { type: string }
+        created_at: { type: integer, format: int64 }
+        completed_at: { type: [integer, 'null'], format: int64 }
+        result:
+          type: [object, 'null']
+          additionalProperties: true
+        error:
+          oneOf:
+            - $ref: '#/components/schemas/Error'
+            - type: 'null'
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error: { $ref: '#/components/schemas/Error' }
+    Error:
+      type: object
+      required: [message, type]
+      properties:
+        message: { type: string }
+        type: { type: string, example: invalid_request_error }
+        param: { type: [string, 'null'] }
+        code: { type: [string, 'null'] }
