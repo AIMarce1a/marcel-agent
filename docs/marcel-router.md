@@ -8,6 +8,16 @@ contract is [`marcel-router-openapi.yaml`](marcel-router-openapi.yaml), OpenAPI
 router is a contract and client-routing layer; it does not require changes to
 the imported Marcel runtime.
 
+The hosted Marcel Routing service is available at
+`https://marcel-agent.com/api/v1`. Account management, API keys, usage, and
+billing are available at:
+
+- Routing: https://marcel-agent.com/routing
+- Dashboard: https://marcel-agent.com/dashboard
+- API keys: https://marcel-agent.com/api-keys
+- Usage: https://marcel-agent.com/usage
+- Billing: https://marcel-agent.com/billing
+
 MVP endpoints are `GET /health`, `GET /v1/models`,
 `POST /v1/chat/completions`, `POST /v1/images/generations`,
 `POST /v1/videos/generations`, and `GET /v1/jobs/{job_id}`. Health is
@@ -19,6 +29,25 @@ below. Unknown models and jobs return the standard OpenAI-shaped error object.
 Clients send `Authorization: Bearer <Marcel API key>` to the router. Missing or
 invalid credentials return `401` with `{ "error": { "message", "type", ... } }`.
 Provider credentials are not sent as a replacement for the Marcel bearer token.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="LA_TUA_API_KEY_MARCEL",
+    base_url="https://marcel-agent.com/api/v1",
+)
+```
+
+```bash
+curl https://marcel-agent.com/api/v1/chat/completions \
+  -H "Authorization: Bearer LA_TUA_API_KEY_MARCEL" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MODEL_ID",
+    "messages": [{"role": "user", "content": "Ciao"}]
+  }'
+```
 
 Bring-your-own-key (BYOK) is compatible with this contract: a Marcel
 installation may resolve provider credentials from its configured secure

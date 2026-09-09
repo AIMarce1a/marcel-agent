@@ -272,7 +272,9 @@ class MarcelSetupTests(unittest.TestCase):
 
     assert config["marcel"]["router"] == {
         "mode": "custom_endpoint", "base_url": "https://models.example.test/v1", "key_env": "MARCEL_API_KEY",
-        "api_mode": "chat_completions", "catalog_path": "/v1/models", "health_path": "/health",
+        "api_mode": "chat_completions",
+        "catalog_path": "/v1/models",
+        "health_path": "/health",
     }
     assert config["providers"]["marcel-custom"]["key_env"] == "MARCEL_API_KEY"
     assert config["delegation"]["workers"]["research"]["toolsets"] == ["web", "documents"]

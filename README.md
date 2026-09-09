@@ -4,6 +4,14 @@ Marcel is an autonomous, client-configurable agent framework for orchestrating c
 It provides memory, schedules, messaging gateways, skills, plugins, and concurrent delegation
 through a business-oriented orchestration layer.
 
+- Website: https://marcel-agent.com
+- Marcel Routing: https://marcel-agent.com/routing
+- Documentation: https://marcel-agent.com/docs
+- Dashboard: https://marcel-agent.com/dashboard
+- Billing: https://marcel-agent.com/billing
+- API keys: https://marcel-agent.com/api-keys
+- Usage: https://marcel-agent.com/usage
+
 ## Current foundation
 
 - OpenAI-compatible Marcel Router contract for chat, model discovery, images, video, and jobs.
@@ -28,9 +36,9 @@ The router contract is documented in:
 MVP endpoints:
 
 ```text
-GET  /health
-GET  /v1/models
-POST /v1/chat/completions
+Base URL  https://marcel-agent.com/api/v1
+GET       https://marcel-agent.com/api/v1/models
+POST      https://marcel-agent.com/api/v1/chat/completions
 ```
 
 Planned media endpoints:
@@ -70,7 +78,7 @@ marcel:
   agent_name: Marcel
   router:
     mode: byok
-    base_url: https://models.customer.example/v1
+    base_url: https://marcel-agent.com/api/v1
     key_env: CUSTOMER_MODEL_API_KEY
   orchestrator:
     provider: marcel-byok
@@ -119,7 +127,7 @@ When a real router is available:
 
 ```bash
 export MARCEL_ROUTER_API_KEY="..."
-uv run marcel-router-validate --base-url https://router.example
+uv run marcel-router-validate --base-url https://marcel-agent.com/api/v1
 ```
 
 For CI or machine-readable diagnostics, add `--json`. The validator checks health, catalog metadata,

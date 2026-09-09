@@ -260,7 +260,10 @@ class RouterValidator:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate Marcel Router OpenAI compatibility.")
-    parser.add_argument("--base-url", help="Router origin, e.g. https://router.example")
+    parser.add_argument(
+        "--base-url",
+        help="OpenAI-compatible base URL, e.g. https://marcel-agent.com/api/v1",
+    )
     parser.add_argument("--fixture", help="Offline ordered JSON response fixture")
     parser.add_argument("--auth-env", default="MARCEL_ROUTER_API_KEY",
                         help="environment variable containing the bearer token (never a token value)")

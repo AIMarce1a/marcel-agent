@@ -15,7 +15,10 @@ _WORKER_ID = re.compile(r"[^a-z0-9._-]+")
 ACTIVITIES = ("search", "general", "coding", "image", "video", "communications", "custom")
 ROUTER_MODES = ("marcel_router", "direct_provider", "custom_endpoint")
 ACCOUNT_TYPES = ("google_workspace", "imap_smtp")
-MARCEL_ROUTING_SITE_URL = "https://hermes-agent.com"
+MARCEL_SITE_URL = "https://marcel-agent.com"
+MARCEL_ROUTING_SITE_URL = f"{MARCEL_SITE_URL}/routing"
+MARCEL_ROUTER_BASE_URL = f"{MARCEL_SITE_URL}/api/v1"
+MARCEL_API_KEYS_URL = f"{MARCEL_SITE_URL}/api-keys"
 GOOGLE_WORKSPACE_SERVICES = (
     ("Gmail — read, search, draft, and send email", "gmail"),
     ("Google Calendar — view and manage events", "calendar"),
@@ -413,11 +416,17 @@ def build_marcel_config(values: dict[str, Any]) -> dict[str, Any]:
         "brand": {"name": "Marcel", "mascot": "monkey"},
         "router": {
             "mode": mode,
+            "base_url": str(
+                values.get("base_url")
+                or (MARCEL_ROUTER_BASE_URL if mode == "marcel_router" else "")
+            ).strip(),
             "key_env": str(values.get("api_key_ref") or "MARCEL_ROUTER_API_KEY").strip()
             .replace("${", "").replace("}", ""),
             "api_mode": "chat_completions",
-            "catalog_path": "/v1/models",
-            "health_path": "/health",
+            "catalog_path": (
+                "/api/v1/models" if mode == "marcel_router" else "/v1/models"
+            ),
+            "health_path": "/api/health" if mode == "marcel_router" else "/health",
         },
         "orchestrator": {
             "name": str(values.get("agent_name") or "Marcel").strip() or "Marcel",
@@ -1001,7 +1010,10 @@ def setup_marcel(config: dict) -> None:
     values: dict[str, Any] = {
         "agent_name": agent_name,
         "router_mode": ROUTER_MODES[mode_index],
-        "base_url": str(router.get("base_url") or ""),
+        "base_url": str(
+            router.get("base_url")
+            or (MARCEL_ROUTER_BASE_URL if current_mode == "marcel_router" else "")
+        ),
         "api_key_ref": str(router.get("key_env") or "MARCEL_ROUTER_API_KEY"),
         "direct_provider": str(router.get("provider") or ""),
         "api_mode": str(router.get("api_mode") or "chat_completions"),
@@ -1064,7 +1076,7 @@ def setup_marcel(config: dict) -> None:
                 if key_action == 2:
                     setup._info(
                         "Marcel Routing",
-                        f"Create or manage your account and API keys at {MARCEL_ROUTING_SITE_URL}",
+                        f"Create or manage your API keys at {MARCEL_API_KEYS_URL}",
                         None,
                     )
                     if not setup.prompt_yes_no("Continue using the existing key?", True):

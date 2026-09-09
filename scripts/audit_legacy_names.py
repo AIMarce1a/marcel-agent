@@ -40,6 +40,7 @@ ALLOW = [
     ),
     ("UPSTREAM.md", LEGACY, "upstream provenance"),
     ("LICENSE", LEGACY, "MIT attribution"),
+    ("THIRD_PARTY_NOTICES.md", LEGACY, "required upstream MIT attribution"),
     ("**/LICENSE", LEGACY, "bundled third-party attribution"),
     ("contributors/emails/**", LEGACY, "immutable contributor identity"),
     (

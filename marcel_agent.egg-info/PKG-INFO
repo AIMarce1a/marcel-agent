@@ -2,11 +2,12 @@ Metadata-Version: 2.4
 Name: marcel-agent
 Version: 0.21.0
 Summary: Marcel — a configurable multi-worker AI company framework
-Author: Nous Research
-License-Expression: MIT
+Author: Admind Srl
+License-Expression: Apache-2.0
 Requires-Python: <3.14,>=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
+License-File: THIRD_PARTY_NOTICES.md
 Requires-Dist: openai==2.24.0
 Requires-Dist: certifi==2026.5.20
 Requires-Dist: python-dotenv==1.2.2
@@ -218,9 +219,9 @@ The router contract is documented in:
 MVP endpoints:
 
 ```text
-GET  /health
-GET  /v1/models
-POST /v1/chat/completions
+Base URL  https://marcel-agent.com/api/v1
+GET       https://marcel-agent.com/api/v1/models
+POST      https://marcel-agent.com/api/v1/chat/completions
 ```
 
 Planned media endpoints:
@@ -260,7 +261,7 @@ marcel:
   agent_name: Marcel
   router:
     mode: byok
-    base_url: https://models.customer.example/v1
+    base_url: https://marcel-agent.com/api/v1
     key_env: CUSTOMER_MODEL_API_KEY
   orchestrator:
     provider: marcel-byok
@@ -309,7 +310,7 @@ When a real router is available:
 
 ```bash
 export MARCEL_ROUTER_API_KEY="..."
-uv run marcel-router-validate --base-url https://router.example
+uv run marcel-router-validate --base-url https://marcel-agent.com/api/v1
 ```
 
 For CI or machine-readable diagnostics, add `--json`. The validator checks health, catalog metadata,

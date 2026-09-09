@@ -641,11 +641,11 @@ DEFAULT_CONFIG = {
         },
         "router": {
             "mode": "marcel_router",  # marcel_router | byok
-            "base_url": "",
+            "base_url": "https://marcel-agent.com/api/v1",
             "key_env": "MARCEL_ROUTER_API_KEY",
             "api_mode": "chat_completions",
-            "catalog_path": "/v1/models",
-            "health_path": "/health",
+            "catalog_path": "/api/v1/models",
+            "health_path": "/api/health",
         },
         "orchestrator": {
             "name": "Marcel",

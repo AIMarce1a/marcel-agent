@@ -8,7 +8,8 @@ info:
     `provider/model`; clients choose the target deterministically before sending
     a request.
 servers:
-  - url: https://router.marcel.ai
+  - url: https://marcel-agent.com/api
+    description: Production Marcel Routing API
 security:
   - bearerAuth: []
 paths:
