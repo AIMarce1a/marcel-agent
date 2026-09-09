@@ -6,8 +6,9 @@ alcance para los informes de vulnerabilidades.
 
 ## 1. Reportar una Vulnerabilidad
 
-Reporta de forma privada a través de [GitHub Security Advisories](https://github.com/NousResearch/hermes-agent/security/advisories/new)
-o **security@nousresearch.com**. No abras issues públicos para
+Reporta de forma privada a través de
+[GitHub Private Vulnerability Reporting](https://github.com/AdMind-ai/marcel-agent/security/advisories/new)
+o **security@marcel-agent.com**. No abras issues públicos para
 vulnerabilidades de seguridad. **Marcel Agent no opera un programa de
 recompensas por errores.**
 
@@ -30,7 +31,8 @@ a través del canal de seguridad privado.
 
 ## 2. Modelo de Confianza
 
-Marcel Agent es un agente personal de un solo inquilino. Su postura es
+Marcel Agent es un agente autónomo de un solo inquilino diseñado para
+implementaciones dedicadas personales o empresariales. Su postura es
 por capas, y las capas no tienen el mismo peso. Los reportadores y
 operadores deben razonar sobre ellas en los mismos términos.
 
@@ -321,6 +323,6 @@ La decisión de fortalecimiento más importante es hacer coincidir el aislamient
 - **Ventana de divulgación coordinada:** 90 días desde el informe, o hasta que se
   publique una corrección, lo que ocurra primero.
 - **Canal:** el hilo GHSA o correspondencia por email con
-  security@nousresearch.com.
+  security@marcel-agent.com.
 - **Crédito:** los reportadores reciben crédito en las notas de versión a menos que
   se solicite anonimato.

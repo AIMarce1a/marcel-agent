@@ -12,8 +12,8 @@
  * testable without booting Electron (main.ts requires('electron') at load).
  */
 
-const OFFICIAL_REPO_HTTPS_URL = 'https://github.com/AIMarce1a/marcel-agent.git'
-const OFFICIAL_REPO_CANONICAL = 'github.com/AIMarce1a/marcel-agent'
+const OFFICIAL_REPO_HTTPS_URL = 'https://github.com/AdMind-ai/marcel-agent.git'
+const OFFICIAL_REPO_CANONICAL = 'github.com/AdMind-ai/marcel-agent'
 
 // Normalize common GitHub remote URL forms to `host/owner/repo` (lowercased,
 // no trailing slash, no .git suffix) so SSH and HTTPS forms of the same repo

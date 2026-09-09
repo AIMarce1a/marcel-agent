@@ -55,14 +55,14 @@ For a command-line only install without Marcel Desktop, run:
 
 #### Linux / macOS / WSL2 / Android (Termux)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 ```
 
 #### Windows (native)
 
 Run in powershell:
 ```powershell
-iex (irm https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.ps1)
 ```
 
 :::tip Android / Termux

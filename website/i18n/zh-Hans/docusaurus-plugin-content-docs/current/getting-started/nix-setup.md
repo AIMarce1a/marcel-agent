@@ -50,7 +50,7 @@ marcel chat
 <summary><strong>从本地克隆构建</strong></summary>
 
 ```bash
-git clone https://github.com/AIMarce1a/marcel-agent.git
+git clone https://github.com/AdMind-ai/marcel-agent.git
 cd marcel-agent
 nix build
 ./result/bin/marcel setup

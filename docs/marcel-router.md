@@ -1,10 +1,11 @@
-# Marcel Router MVP contract
+# Marcel Router contract
 
 ## Scope and compatibility
 
 Marcel Router exposes an OpenAI-compatible API at `/v1`. The normative wire
 contract is [`marcel-router-openapi.yaml`](marcel-router-openapi.yaml), OpenAPI
-3.1. This document defines the MVP behavior that accompanies that schema. The
+3.1. This document defines the implemented MVP and the planned extensions that
+accompany that schema. The
 router is a contract and client-routing layer; it does not require changes to
 the imported Marcel runtime.
 
@@ -18,11 +19,15 @@ billing are available at:
 - Usage: https://marcel-agent.com/usage
 - Billing: https://marcel-agent.com/billing
 
-MVP endpoints are `GET /health`, `GET /v1/models`,
-`POST /v1/chat/completions`, `POST /v1/images/generations`,
-`POST /v1/videos/generations`, and `GET /v1/jobs/{job_id}`. Health is
-unauthenticated. Every `/v1` operation requires the authorization described
-below. Unknown models and jobs return the standard OpenAI-shaped error object.
+The implemented MVP endpoints are `GET /health`, `GET /v1/models`, and
+`POST /v1/chat/completions`. Health is unauthenticated. Every `/v1` operation
+requires the authorization described below.
+
+The OpenAPI schema also defines planned media and asynchronous-job extensions:
+`POST /v1/images/generations`, `POST /v1/videos/generations`, and
+`GET /v1/jobs/{job_id}`. These endpoints are contract-only and must not be
+presented as generally available until their implementation and release are
+announced.
 
 ## Authentication and BYOK
 
@@ -91,10 +96,14 @@ it returns SSE. Each event is `data: <JSON ChatCompletionChunk>` and completion
 is `data: [DONE]`; tool-call deltas can be split and are joined by `index`.
 When `stream_options.include_usage` is true, the terminal chunk includes usage.
 
-Image generation may complete immediately or return a `202` job. Video
-generation returns a `202` job. Poll `GET /v1/jobs/{job_id}` until its terminal
-status is `succeeded`, `failed`, or `cancelled`. Failed jobs include the same
-error shape used by HTTP failures.
+### Planned media and job semantics
+
+When implemented, image generation may complete immediately or return a `202`
+job. Video generation will return a `202` job. Clients will poll
+`GET /v1/jobs/{job_id}` until its terminal status is `succeeded`, `failed`, or
+`cancelled`. Failed jobs will include the same error shape used by HTTP
+failures. These semantics define the intended contract, not current
+availability.
 
 ## Errors and versioning
 

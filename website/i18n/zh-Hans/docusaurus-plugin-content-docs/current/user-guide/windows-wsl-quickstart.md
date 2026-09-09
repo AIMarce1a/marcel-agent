@@ -100,7 +100,7 @@ wsl --shutdown
 打开 WSL2 shell 后执行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 source ~/.bashrc
 marcel
 ```

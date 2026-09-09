@@ -229,7 +229,7 @@ function cachedScriptPath(marcelHome, commit) {
 
 function downloadInstallScript(_ref, _destPath) {
   const scriptName = installScriptName()
-  const url = `https://raw.githubusercontent.com/AIMarce1a/marcel-agent/${_ref}/scripts/${scriptName}`
+  const url = `https://raw.githubusercontent.com/AdMind-ai/marcel-agent/${_ref}/scripts/${scriptName}`
   return new Promise((resolve, reject) => {
     fs.mkdirSync(path.dirname(_destPath), { recursive: true })
     const tmpPath = _destPath + '.tmp'

@@ -6,8 +6,9 @@ scope for vulnerability reports.
 
 ## 1. Reporting a Vulnerability
 
-Report privately via [GitHub Security Advisories](https://github.com/NousResearch/hermes-agent/security/advisories/new)
-or **security@nousresearch.com**. Do not open public issues for
+Report privately via
+[GitHub Private Vulnerability Reporting](https://github.com/AdMind-ai/marcel-agent/security/advisories/new)
+or **security@marcel-agent.com**. Do not open public issues for
 security vulnerabilities. **Marcel Agent does not operate a bug
 bounty program.**
 
@@ -31,7 +32,8 @@ through the private security channel.
 
 ## 2. Trust Model
 
-Marcel Agent is a single-tenant personal agent. Its posture is
+Marcel Agent is a single-tenant autonomous agent designed for dedicated
+personal or business deployments. Its posture is
 layered, and the layers are not equally load-bearing. Reporters and
 operators should reason about them in the same terms.
 
@@ -330,6 +332,6 @@ that:
 - **Coordinated disclosure window:** 90 days from report, or until a
   fix is released, whichever comes first.
 - **Channel:** the GHSA thread or email correspondence with
-  security@nousresearch.com.
+  security@marcel-agent.com.
 - **Credit:** reporters are credited in release notes unless
   anonymity is requested.

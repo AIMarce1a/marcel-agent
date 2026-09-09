@@ -24,7 +24,7 @@ By default every profile is seeded with the bundled skill catalog, and each `mar
 **At install time** (applies to the default `~/.marcel` profile):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash -s -- --no-skills
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash -s -- --no-skills
 ```
 
 **At profile-create time** (named profiles):

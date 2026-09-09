@@ -80,7 +80,7 @@ const config: Config = {
         docs: {
           routeBasePath: '/',  // Docs at the root of /docs/
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/AIMarce1a/marcel-agent/edit/main/website/',
+          editUrl: 'https://github.com/AdMind-ai/marcel-agent/edit/main/website/',
         },
         blog: false,
         theme: {
@@ -149,7 +149,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/AIMarce1a/marcel-agent',
+          href: 'https://github.com/AdMind-ai/marcel-agent',
           label: 'GitHub',
           position: 'right',
         },
@@ -176,7 +176,7 @@ const config: Config = {
           title: 'Community',
           items: [
             { label: 'Discord', href: 'https://discord.gg/NousResearch' },
-            { label: 'GitHub Issues', href: 'https://github.com/AIMarce1a/marcel-agent/issues' },
+            { label: 'GitHub Issues', href: 'https://github.com/AdMind-ai/marcel-agent/issues' },
             { label: 'Skills Hub', href: 'https://agentskills.io' },
           ],
         },
@@ -184,12 +184,12 @@ const config: Config = {
           title: 'More',
           items: [
             { label: 'Desktop Download', href: 'https://hermes-agent.nousresearch.com/' },
-            { label: 'GitHub', href: 'https://github.com/AIMarce1a/marcel-agent' },
+            { label: 'GitHub', href: 'https://github.com/AdMind-ai/marcel-agent' },
             { label: 'Nous Research', href: 'https://nousresearch.com' },
           ],
         },
       ],
-      copyright: `Marcel © ${new Date().getFullYear()} Admind Srl · Apache License 2.0 · <a href="https://github.com/AIMarce1a/marcel-agent/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`,
+      copyright: `Marcel © ${new Date().getFullYear()} Admind Srl · Apache License 2.0 · <a href="https://github.com/AdMind-ai/marcel-agent/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>`,
     },
     prism: {
       theme: prismThemes.github,

@@ -46,7 +46,7 @@ Never answer "Marcel can't do that" from memory. Marcel ships far more than this
 
 ```bash
 # Install (shell installer — sets up uv, Python, the venv, and the launcher)
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 
 # Interactive chat (default surface; set display.interface: tui to launch the Ink TUI instead)
 marcel

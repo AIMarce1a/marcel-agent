@@ -83,7 +83,7 @@ Packaging/repository/signing problems for this option should be reported to the 
 Marcel now ships a Termux-aware installer path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 ```
 
 On Termux, the installer automatically:
@@ -135,7 +135,7 @@ Then use `python3.13` in place of `python` in the commands below
 ### 2. Clone Marcel
 
 ```bash
-git clone https://github.com/AIMarce1a/marcel-agent.git
+git clone https://github.com/AdMind-ai/marcel-agent.git
 cd marcel-agent
 ```
 

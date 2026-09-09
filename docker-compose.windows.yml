@@ -11,7 +11,7 @@
 #
 services:
   gateway:
-    image: AIMarce1a/marcel-agent:latest
+    image: AdMind-ai/marcel-agent:latest
     container_name: marcel
     restart: unless-stopped
     volumes:
@@ -22,7 +22,7 @@ services:
     command: ["gateway", "run"]
 
   dashboard:
-    image: AIMarce1a/marcel-agent:latest
+    image: AdMind-ai/marcel-agent:latest
     container_name: marcel-dashboard
     restart: unless-stopped
     depends_on:

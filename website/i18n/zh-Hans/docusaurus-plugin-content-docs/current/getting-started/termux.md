@@ -46,7 +46,7 @@ python -m pip install -e '.[termux]' -c constraints-termux.txt
 Marcel 现已内置 Termux 感知的安装路径：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 ```
 
 在 Termux 上，安装程序会自动：
@@ -80,7 +80,7 @@ pkg install -y git python clang rust make pkg-config libffi openssl nodejs ripgr
 ### 2. 克隆 Marcel
 
 ```bash
-git clone https://github.com/AIMarce1a/marcel-agent.git
+git clone https://github.com/AdMind-ai/marcel-agent.git
 cd marcel-agent
 ```
 

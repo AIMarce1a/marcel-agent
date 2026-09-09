@@ -1198,7 +1198,7 @@ export const ru = defineLocale({
       sshErrHostKey:
         'Ключ хоста ИЗМЕНИЛСЯ с последнего подключения. Убедитесь, что это ожидаемо, затем выполните ssh-keygen -R <host> и переподключитесь.',
       sshErrNotInstalled:
-        'Marcel не установлен на удалённой машине. Установите его там (curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | sh) или задайте путь к Marcel.',
+        'Marcel не установлен на удалённой машине. Установите его там (curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | sh) или задайте путь к Marcel.',
       sshErrPlatform:
         'Неподдерживаемая удалённая платформа. SSH-режим Marcel Desktop поддерживает удалённые хосты Linux, macOS и Windows.',
       sshErrTimeout: 'SSH-соединение истекло. Хост может быть недоступен или «спит».',

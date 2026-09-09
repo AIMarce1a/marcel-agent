@@ -70,7 +70,7 @@ The `default` package adds ~700 MB to the closure. If you only need messaging pl
 <summary><strong>Running from a local clone</strong></summary>
 
 ```bash
-git clone https://github.com/AIMarce1a/marcel-agent.git
+git clone https://github.com/AdMind-ai/marcel-agent.git
 cd marcel-agent
 nix develop
 marcel setup

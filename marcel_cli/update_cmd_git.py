@@ -172,9 +172,9 @@ def _print_parked_branch_kept_notice(current_branch: str, target_branch: str, un
 
 OFFICIAL_REPO_URLS = {
     MARCEL_RELEASE_HTTPS_URL,
-    "git@github.com:AIMarce1a/marcel-agent.git",
-    "https://github.com/AIMarce1a/marcel-agent",
-    "git@github.com:AIMarce1a/marcel-agent",
+    "git@github.com:AdMind-ai/marcel-agent.git",
+    "https://github.com/AdMind-ai/marcel-agent",
+    "git@github.com:AdMind-ai/marcel-agent",
 }
 OFFICIAL_REPO_URL = MARCEL_RELEASE_HTTPS_URL
 SKIP_UPSTREAM_PROMPT_FILE = ".skip_upstream_prompt"

@@ -236,7 +236,7 @@ async function locateMarcel(ssh, remoteMarcelPath) {
 
   const err: any = new Error(
     'Marcel is not installed on the remote host (could not find a `marcel` executable). ' +
-      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | sh  ' +
+      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | sh  ' +
       '— or set the Marcel path explicitly in the SSH connection settings.'
   )
 

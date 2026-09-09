@@ -49,7 +49,7 @@ development environment on the same layout the CLI, updater, lazy dependency
 installer, gateway, and docs assume.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIMarce1a/marcel-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 cd "${MARCEL_HOME:-$HOME/.marcel}/marcel-agent"
 
 # Add dev/test extras on top of the standard install.
@@ -89,7 +89,7 @@ which silently destroys the running runtime mid-session. Keeping it outside the
 tree means no relative path from the workspace resolves to it.
 
 ```bash
-git clone https://github.com/AIMarce1a/marcel-agent.git
+git clone https://github.com/AdMind-ai/marcel-agent.git
 cd marcel-agent
 
 # Create venv with Python 3.11, OUTSIDE the source tree

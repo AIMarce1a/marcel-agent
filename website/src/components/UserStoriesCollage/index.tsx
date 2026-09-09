@@ -295,7 +295,7 @@ export default function UserStoriesCollage(): JSX.Element {
       <div className={styles.footer}>
         Built something with Marcel?{' '}
         <a
-          href="https://github.com/AIMarce1a/marcel-agent/edit/main/website/src/data/userStories.json"
+          href="https://github.com/AdMind-ai/marcel-agent/edit/main/website/src/data/userStories.json"
           target="_blank"
           rel="noopener noreferrer"
         >

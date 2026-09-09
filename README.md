@@ -12,9 +12,28 @@ through a business-oriented orchestration layer.
 - API keys: https://marcel-agent.com/api-keys
 - Usage: https://marcel-agent.com/usage
 
+## Why Marcel exists
+
+Marcel builds on its documented upstream foundation while adding a
+business-oriented control and deployment layer.
+
+| Area | Upstream foundation | Marcel |
+| --- | --- | --- |
+| Orchestration | Base delegation | Configurable orchestrator and worker registry |
+| Routing | Provider/model selection | Deterministic `cheapest_capable` policy |
+| Business controls | Limited | Budgets, usage metadata, billing and policy hooks |
+| Deployment | Personal agent runtime | Dedicated single-tenant personal or business deployment |
+| Integrations | General-purpose integrations | Customer account profiles and guided setup |
+| UX | General agent experience | Business-first setup, quiet defaults and non-interrupting steering |
+
+Marcel's original work and modifications are Apache-2.0 licensed. Upstream
+provenance and its MIT notices are documented in [UPSTREAM.md](UPSTREAM.md) and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## Current foundation
 
-- OpenAI-compatible Marcel Router contract for chat, model discovery, images, video, and jobs.
+- OpenAI-compatible Marcel Router MVP for chat and model discovery, with planned
+  contract definitions for images, video, and asynchronous jobs.
 - Configurable orchestrator plus an unbounded registry of named workers.
 - Worker-specific provider, model, tools/toolsets, concurrency, iteration, timeout, fallback, and
   budget metadata.
