@@ -496,11 +496,11 @@ def apply_marcel_config(config: dict[str, Any], values: dict[str, Any]) -> dict[
         .setdefault("telegram", {})
     )
     telegram_display["tool_progress"] = "off"
-    telegram_display["interim_assistant_messages"] = "off"
+    telegram_display["interim_assistant_messages"] = False
     telegram_display["thinking_progress"] = "off"
     telegram_display["live_status"] = "off"
-    telegram_display["long_running_notifications"] = "off"
-    telegram_display["busy_steer_ack_enabled"] = "off"
+    telegram_display["long_running_notifications"] = False
+    telegram_display["busy_steer_ack_enabled"] = False
     approvals = config.setdefault("approvals", {})
     approvals["mode"] = "off"
     approvals["cron_mode"] = "approve"

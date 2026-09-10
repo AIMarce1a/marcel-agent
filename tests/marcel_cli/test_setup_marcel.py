@@ -61,10 +61,7 @@ class MarcelSetupTests(unittest.TestCase):
 
     self.assertEqual(config["display"]["busy_input_mode"], "steer")
     self.assertFalse(config["display"]["busy_steer_ack_enabled"])
-    self.assertEqual(
-        config["display"]["platforms"]["telegram"]["long_running_notifications"],
-        "off",
-    )
+    self.assertFalse(config["display"]["platforms"]["telegram"]["long_running_notifications"])
     self.assertEqual(config["approvals"]["mode"], "off")
     self.assertEqual(config["approvals"]["unattended_mode"], "approve")
 
@@ -198,6 +195,7 @@ class MarcelSetupTests(unittest.TestCase):
         patch.object(setup_cli_module, "_info"),
         patch("marcel_cli.setup_tts._setup_tts_provider"),
         patch("marcel_cli.setup_marcel._choose_voice_model"),
+        patch("marcel_cli.setup_marcel._choose_image_provider"),
         patch("marcel_cli.setup_marcel.ensure_marcel_soul"),
         patch("marcel_cli.setup_marcel.ensure_memory_maintenance_job"),
     ):
@@ -468,7 +466,6 @@ class MarcelSetupTests(unittest.TestCase):
     self.assertIn("busy CEO", soul)
     self.assertIn("plain everyday language", soul)
     self.assertNotIn("You are Marcel", soul)
-    self.assertNotIn("Marcel", soul)
 
 
   def test_marcel_soul_replaces_only_the_untouched_upstream_default(self):

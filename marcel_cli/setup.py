@@ -779,7 +779,17 @@ def _run_setup_wizard_impl(args):
         migration_ran = _offer_openclaw_migration(marcel_home)  # before configuration begins
         if migration_ran:
             config = load_config()
-        setup_mode = prompt_choice("How would you like to set up Marcel?", [label for label, _ in _FIRST_TIME_MODES], 0)
+        # The Marcel entrypoint is already the product-specific setup flow; do not
+        # expose the legacy first-time mode picker when invoked as `marcel setup`.
+        setup_mode = (
+            1
+            if is_marcel
+            else prompt_choice(
+                "How would you like to set up Marcel?",
+                [label for label, _ in _FIRST_TIME_MODES],
+                0,
+            )
+        )
         label, runner = _FIRST_TIME_MODES[setup_mode]
         if runner is not None:
             from marcel_cli import setup_quick
