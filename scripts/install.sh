@@ -1492,10 +1492,6 @@ show_manual_install_hint() {
 
 clone_repo() {
     log_info "Installing to $INSTALL_DIR..."
-    if [ ! -d "$INSTALL_DIR/.git" ]; then
-        log_error "Marcel release infrastructure is not provisioned; fresh install/archive download is disabled."
-        return 1
-    fi
 
     # An interrupted previous clone leaves a .git with no initial commit, where
     # the update path's `git stash` / `git checkout` abort with "You do not
@@ -1614,7 +1610,7 @@ EOF
             exit 1
         fi
     else
-        # Try SSH first (for private repo access), fall back to HTTPS
+        # Try SSH first for configured upstream access, fall back to HTTPS
         # GIT_SSH_COMMAND disables interactive prompts and sets a short timeout
         # so SSH fails fast instead of hanging when no key is configured.
         log_info "Trying SSH clone..."

@@ -37,14 +37,26 @@ on:
         required: false
         type: string
         default: '5'
+      candidate-ref:
+        description: 'Candidate branch, tag, or full SHA to clean-install (default: main).'
+        required: false
+        type: string
+        default: main
+      candidate-platform:
+        description: 'Platform for candidate clean-install qualification.'
+        required: false
+        type: choice
+        default: all
+        options: [all, linux, macos, windows]
   schedule:
     # Every 12 hours, off the hour to avoid the top-of-hour runner crunch.
     - cron: '20 7,19 * * *'
   push:
     tags:
       # Release tags only: the repo also carries backup/* and one-off tags.
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+.[0-9]+'
+      - 'v*.*.*'
+      - 'v*.*.*.*'
+      - 'v*.*.*-*'
 
 permissions:
   contents: read
@@ -76,7 +88,7 @@ jobs:
       - id: pick
         run: |
           set -euo pipefail
-          if ! git tag --list 'v*' | grep -Eq '^v[0-9]{4}\.[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+          if ! git tag --list 'v*' | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'; then
             echo "No Marcel release tags exist yet; update E2E will start after the first prerelease."
             echo 'tags=[]' >> "$GITHUB_OUTPUT"
             echo 'has-releases=false' >> "$GITHUB_OUTPUT"
@@ -116,3 +128,97 @@ jobs:
     with:
       route: installer
       install-ref: ${{ matrix.install-ref }}
+
+  # A candidate is deliberately separate from the historical update matrix:
+  # arbitrary candidate code is run with read-only contents access and no
+  # secrets, and never through the reusable update workflow.
+  candidate-resolve:
+    if: github.event_name == 'workflow_dispatch'
+    name: Resolve candidate commit
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - name: Validate candidate ref
+        env:
+          CANDIDATE_REF: ${{ inputs.candidate-ref }}
+        run: |
+          set -euo pipefail
+          [[ "$CANDIDATE_REF" != -* && "$CANDIDATE_REF" != *..* && "$CANDIDATE_REF" != *:* ]]
+          [[ "$CANDIDATE_REF" != refs/* ]] || {
+            echo "Use a branch/tag name or full SHA from this repository; fork and pull refs are not accepted." >&2
+            exit 1
+          }
+          [[ "$CANDIDATE_REF" =~ ^[A-Za-z0-9._/-]+$ ]]
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.candidate-ref }}
+          fetch-depth: 1
+          persist-credentials: false
+      - id: resolve
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Candidate resolved to repository commit $sha"
+
+  candidate:
+    if: github.event_name == 'workflow_dispatch'
+    name: Candidate clean install (${{ matrix.platform }})
+    needs: candidate-resolve
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ inputs.candidate-platform == 'all' && fromJSON('[{"platform":"linux","runner":"ubuntu-latest"},{"platform":"macos","runner":"macos-latest"},{"platform":"windows","runner":"windows-latest"}]') || inputs.candidate-platform == 'linux' && fromJSON('[{"platform":"linux","runner":"ubuntu-latest"}]') || inputs.candidate-platform == 'macos' && fromJSON('[{"platform":"macos","runner":"macos-latest"}]') || fromJSON('[{"platform":"windows","runner":"windows-latest"}]') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.candidate-resolve.outputs.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Candidate clean install (Unix)
+        if: matrix.platform != 'windows'
+        env:
+          CANDIDATE_SHA: ${{ needs.candidate-resolve.outputs.sha }}
+          MARCEL_HOME: ${{ runner.temp }}/marcel-candidate-home
+          INSTALL_DIR: ${{ runner.temp }}/marcel-candidate-install
+        run: |
+          set -euo pipefail
+          bash scripts/install.sh --commit "$CANDIDATE_SHA" --non-interactive \
+            --skip-browser --skip-setup --marcel-home "$MARCEL_HOME" --dir "$INSTALL_DIR"
+          test "$(git -C "$INSTALL_DIR" rev-parse HEAD)" = "$CANDIDATE_SHA"
+          export PATH="$INSTALL_DIR/venv/bin:$HOME/.local/bin:$PATH"
+          marcel --version
+          doctor_log="$(mktemp)"
+          if ! marcel doctor 2>&1 | tee "$doctor_log"; then
+            echo "marcel doctor failed" >&2
+            exit 1
+          fi
+          ! grep -Eq 'Found [0-9]+ issue|require manual intervention' "$doctor_log"
+      - name: Candidate clean install (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        env:
+          CANDIDATE_SHA: ${{ needs.candidate-resolve.outputs.sha }}
+          MARCEL_HOME: ${{ runner.temp }}\marcel-candidate-home
+          INSTALL_DIR: ${{ runner.temp }}\marcel-candidate-install
+        run: |
+          $ErrorActionPreference = "Stop"
+          & .\scripts\install.ps1 -Commit $env:CANDIDATE_SHA -NonInteractive `
+            -SkipSetup -MarcelHome $env:MARCEL_HOME -InstallDir $env:INSTALL_DIR
+          $installed = (git -C $env:INSTALL_DIR rev-parse HEAD).Trim()
+          if ($installed -ne $env:CANDIDATE_SHA) { throw "Installer resolved $installed, expected $env:CANDIDATE_SHA" }
+          $env:PATH = "$env:INSTALL_DIR\venv\Scripts;$env:USERPROFILE\.local\bin;$env:PATH"
+          marcel --version
+          $doctorLog = Join-Path $env:RUNNER_TEMP "marcel-doctor.txt"
+          & marcel doctor 2>&1 | Tee-Object -FilePath $doctorLog
+          if ($LASTEXITCODE -ne 0) { throw "marcel doctor failed" }
+          $doctorText = Get-Content -Raw $doctorLog
+          if ($doctorText -match "Found [0-9]+ issue|require manual intervention") {
+            throw "marcel doctor reported fatal issues"
+          }

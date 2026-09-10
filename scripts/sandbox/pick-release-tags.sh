@@ -24,8 +24,8 @@
 # checkout has no tags and this exits non-zero rather than silently emitting an
 # empty matrix.
 #
-# Only vYYYY.M.D[.N] release tags are considered; the repo also carries
-# backup/* and one-off tags that are not releases.
+# Only SemVer vMAJOR.MINOR.PATCH[.N][-prerelease] release tags are considered;
+# the repo also carries backup/* and one-off tags that are not releases.
 
 set -euo pipefail
 
@@ -64,12 +64,43 @@ if [ -z "$REPO" ]; then
   REPO="$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$script_dir")"
 fi
 
-# sort -V orders v2026.4.8 before v2026.4.13 (numeric), which a plain
-# lexicographic sort gets wrong.
+# Sort with SemVer precedence rather than sort -V.  The fourth numeric
+# component is retained for the historical CalVer-style tags; prereleases sort
+# before their final release, and numeric prerelease identifiers sort before
+# non-numeric identifiers.
 mapfile -t tags < <(
-  git -C "$REPO" tag --list 'v*' \
-    | grep -E '^v[0-9]{4}\.[0-9]+\.[0-9]+(\.[0-9]+)?$' \
-    | sort -V
+  git -C "$REPO" tag --list 'v*' |
+    python3 -c '
+import re
+import sys
+
+pattern = re.compile(
+    r"^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:\.([0-9]+))?"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+)
+
+def key(tag):
+    match = pattern.fullmatch(tag)
+    if not match:
+        return None
+    major, minor, patch, fourth, prerelease = match.groups()
+    core = (int(major), int(minor), int(patch), int(fourth or 0))
+    if prerelease is None:
+        return core + (1, ())
+    identifiers = []
+    for identifier in prerelease.split("."):
+        if identifier.isdigit():
+            identifiers.append((0, int(identifier)))
+        else:
+            identifiers.append((1, identifier))
+    return core + (0, tuple(identifiers))
+
+tags = [(key(tag), tag) for tag in sys.stdin.read().splitlines()]
+tags = [(sort_key, tag) for sort_key, tag in tags if sort_key is not None]
+print("\n".join(
+    tag for sort_key, tag in sorted(tags, key=lambda item: (item[0], item[1]))
+))
+'
 )
 
 total="${#tags[@]}"

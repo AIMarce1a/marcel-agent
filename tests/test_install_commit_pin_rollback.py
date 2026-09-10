@@ -13,10 +13,11 @@ The pin is skipped when its target is already an ancestor of HEAD, unless the
 caller explicitly passes ``--force-commit`` / ``-ForceCommit``. A fresh clone
 has no such ancestry, so reproducible/CI pinning is unaffected.
 
-``install.ps1`` carries the same guard (that is the path the Windows report
-hit), but there is no PowerShell host in CI to execute it against a real repo,
-and asserting on the script's *source text* would test its shape rather than
-its behavior. These run the bash implementation of the same logic for real.
+``install.ps1`` carries the same pin semantics (that is the path the Windows
+report hit), but there is no PowerShell host in CI to execute it against a real
+repo, and asserting on the script's *source text* would test its shape rather
+than its behavior. These run the bash implementation of the same logic for
+real.
 """
 
 from __future__ import annotations

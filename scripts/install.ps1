@@ -2154,10 +2154,6 @@ function Install-SystemPackages {
 
 function Install-Repository {
     Write-Info "Installing to $InstallDir..."
-    if (-not (Test-Path "$InstallDir\.git")) {
-        throw "Marcel release infrastructure is not provisioned; fresh install/archive download is disabled."
-    }
-
     $didUpdate = $false
 
     if (Test-Path $InstallDir) {
