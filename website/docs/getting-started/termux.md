@@ -7,7 +7,7 @@ description: "Run Marcel Agent directly on an Android phone with Termux"
 # Marcel on Android with Termux
 
 :::warning Tier 2 platform
-Termux (Android) is a [Tier 2 platform](./platform-support.md#tier-2). The installer script and documentation here are maintained on a best-effort basis only. Commits to `main` may break these packages at any point in time.
+Termux (Android) is a [best-effort platform](./platform-support.md#best-effort-not-release-qualified). The installer script and documentation here are maintained on a best-effort basis only. Commits to `main` may break these packages at any point in time.
 :::
 
 Marcel Agent can run directly on an Android phone through [Termux](https://termux.dev/).

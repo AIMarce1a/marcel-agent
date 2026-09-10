@@ -19,7 +19,7 @@ made by this prerelease.
 | --- | --- | --- | --- |
 | macOS 13+ | Apple Silicon (arm64) | [`install.sh`](./installation.md#macos) | CLI/runtime support. Intel macOS is not in this release's support set. |
 | Ubuntu 22.04/24.04 LTS | x86_64 | [`install.sh`](./installation.md#linux) | Primary Linux target; suitable for desktop or a headless server. |
-| Debian 12 | x86_64 | [`install.sh`](./installation.md#linux-server) | Supported server target; use the dedicated service-user instructions. |
+| Debian 12 | x86_64 | [`install.sh`](./installation.md) | Supported server target; use the dedicated service-user instructions. |
 | Windows 10/11 | x86_64 | [`install.ps1`](./installation.md#windows) | Native CLI install. Desktop and platform-specific integrations may have additional limits. |
 | Windows 10/11 with WSL2 (Ubuntu) | x86_64 | Linux [`install.sh`](./installation.md#linux) | Treat as Linux; Windows-native paths and services are not interchangeable with WSL paths. |
 

@@ -22,9 +22,9 @@ jobs:
           cache: npm
           cache-dependency-path: website/package-lock.json
 
-      - name: grab npm 12
+      - name: install qualified npm
         run: |
-          npm i -g npm@12
+          npm i -g npm@11.17.0
 
       - name: Install website dependencies
         uses: ./.github/actions/retry
