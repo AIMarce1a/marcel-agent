@@ -26,6 +26,11 @@ class _AzureCurrent:
     api_key: str = ""
 
 
+def _azure_api_key_status(configured: bool) -> str:
+    """Describe whether an API key is configured without revealing key material."""
+    return "configured" if configured else "not configured"
+
+
 def _azure_current(config) -> _AzureCurrent:
     from marcel_cli.config import get_env_value
 
@@ -167,7 +172,7 @@ def _model_flow_azure_foundry(config, current_model=""):
     if cur.auth_mode == "entra_id":
         print("  Current auth mode: Microsoft Entra ID (keyless)")
     elif cur.api_key:
-        print(f"  Current auth mode: API key ({cur.api_key[:8]}...)")
+        print("  Current auth mode: API key (configured)")
     print()
 
     # Step 1: endpoint URL
@@ -209,7 +214,9 @@ def _model_flow_azure_foundry(config, current_model=""):
             token_provider, entra_overrides = preflight
     if not use_entra:
         print()
-        api_key = _ask(f"API key [{cur.api_key[:8] + '...' if cur.api_key else 'required'}]: ", secret=True)
+        api_key = _ask(
+            f"API key [{_azure_api_key_status(bool(cur.api_key)) if cur.api_key else 'required'}]: ", secret=True
+        )
         if api_key is None:
             return
         effective_key = api_key or cur.api_key

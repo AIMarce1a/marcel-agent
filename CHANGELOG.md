@@ -3,10 +3,17 @@
 All notable changes to Marcel Agent will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) for published
-releases. The repository is currently in pre-release preparation: no GitHub
-release or supported package artifact has been announced yet.
+releases. The repository is currently in pre-release preparation: no supported
+package artifact has been announced yet.
 
 ## Unreleased
+
+## 0.21.0-rc.1 (first public prerelease)
+
+`v0.21.0-rc.1` is the first public Marcel prerelease. Version `0.21.0`
+continues the upstream runtime lineage while Marcel establishes its own
+release and package metadata. The prerelease tag uses SemVer rather than the
+legacy CalVer tags used for normal upstream weekly releases.
 
 ### Added
 

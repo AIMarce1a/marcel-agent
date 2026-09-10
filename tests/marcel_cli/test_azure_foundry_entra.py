@@ -70,6 +70,14 @@ def fake_azure_identity(monkeypatch):
 
 
 class TestResolveAzureFoundryRuntimeEntra:
+    def test_azure_setup_key_status_does_not_reveal_key_material(self):
+        from marcel_cli.model_setup_flows_azure import _azure_api_key_status
+
+        secret = "azure-key-with-sensitive-prefix"
+        assert _azure_api_key_status(bool(secret)) == "configured"
+        assert secret not in _azure_api_key_status(bool(secret))
+        assert _azure_api_key_status(False) == "not configured"
+
     def test_returns_callable_api_key_for_entra(self, fake_azure_identity):
         from marcel_cli.runtime_provider import _resolve_azure_foundry_runtime
         runtime = _resolve_azure_foundry_runtime(

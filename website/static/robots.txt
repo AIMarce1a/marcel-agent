@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /docs/
+Disallow: /dashboard
+
+Sitemap: https://marcel-agent.com/docs/sitemap.xml

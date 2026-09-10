@@ -43,6 +43,9 @@ tmp/
 temp_vision_images/
 marcel-*/*
 examples/
+!examples/
+!examples/env/
+!examples/env/*.env.example
 tests/quick_test_dataset.jsonl
 tests/sample_dataset.jsonl
 run_datagen_kimik2-thinking.sh

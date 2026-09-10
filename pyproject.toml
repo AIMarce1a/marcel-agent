@@ -16,6 +16,18 @@ requires-python = ">=3.11,<3.14"
 authors = [{ name = "Admind Srl" }]
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
 dependencies = [
   # Core — every direct dep is exact-pinned to ==X.Y.Z (no ranges).
   # Rationale: ranges allow PyPI to ship a fresh version of a transitive
@@ -160,6 +172,14 @@ dependencies = [
   # index and Marcel already degrades to its no-op Relay host when absent.
 ]
 
+[project.urls]
+Homepage = "https://marcel-agent.com"
+Documentation = "https://marcel-agent.com/docs"
+Repository = "https://github.com/AdMind-ai/marcel-agent"
+Issues = "https://github.com/AdMind-ai/marcel-agent/issues"
+Changelog = "https://github.com/AdMind-ai/marcel-agent/blob/main/CHANGELOG.md"
+Security = "https://github.com/AdMind-ai/marcel-agent/security"
+
 [project.optional-dependencies]
 # Native Anthropic provider — only needed when provider=anthropic (not via
 # OpenRouter or other aggregators).
@@ -178,7 +198,7 @@ modal = ["modal==1.3.4"]
 daytona = ["daytona==0.155.0"]
 vercel = ["vercel==0.7.2"]
 hindsight = ["hindsight-client==0.6.1"]
-dev = ["debugpy==1.8.20", "pytest==9.1.1", "pytest-asyncio==1.3.0", "mcp==2.0.0", "httpx2==2.7.0", "starlette==1.3.1", "ty==0.0.21", "ruff==0.15.10", "setuptools==83.0.0"]  # starlette: CVE-2026-48710; setuptools: 83 (torch >=2.13 requires setuptools 83)
+dev = ["debugpy==1.8.20", "pytest==9.1.1", "pytest-asyncio==1.3.0", "mcp==2.0.0", "httpx2==2.12.0", "starlette==1.3.1", "ty==0.0.21", "ruff==0.15.10", "setuptools==83.0.0"]  # starlette: CVE-2026-48710; setuptools: 83 (torch >=2.13 requires setuptools 83)
 messaging = ["python-telegram-bot[webhooks]==22.8", "discord.py[voice]==2.7.1", "aiohttp==3.14.3", "brotlicffi==1.2.0.1", "slack-bolt==1.30.0", "slack-sdk==3.43.0", "qrcode==7.4.2"]  # aiohttp 3.14.3: prior CVEs + GHSA-cq5v-8q36-5273/GHSA-mfx4-hv73-q22v/GHSA-mq44-7p77-q5h7
 cron = []  # croniter is now a core dependency; this extra kept for back-compat
 slack = ["slack-bolt==1.30.0", "slack-sdk==3.43.0", "aiohttp==3.14.3"]
@@ -250,7 +270,7 @@ pty = []
 # resolution. Marcel' own `httpx[socks]==0.28.1` in [dependencies] is
 # unaffected — the two distributions install side by side under different
 # module names.
-mcp = ["mcp==2.0.0", "httpx2==2.7.0", "starlette==1.3.1"]  # starlette: CVE-2026-48710
+mcp = ["mcp==2.0.0", "httpx2==2.12.0", "starlette==1.3.1"]  # starlette: CVE-2026-48710
 # Backwards-compatible no-op alias. Relay is a core dependency on supported
 # wheel targets and intentionally unavailable on other platforms.
 nemo-relay = []
@@ -261,7 +281,7 @@ teams = ["microsoft-teams-apps==2.0.13.4", "aiohttp==3.14.3"]  # aiohttp 3.14.3:
 # The cua-driver binary itself is installed via `marcel tools` post-setup
 # (curl install script); this extra just pins the MCP client used to talk
 # to it, which is already provided by the `mcp` extra.
-computer-use = ["mcp==2.0.0", "httpx2==2.7.0", "starlette==1.3.1"]  # starlette: CVE-2026-48710
+computer-use = ["mcp==2.0.0", "httpx2==2.12.0", "starlette==1.3.1"]  # starlette: CVE-2026-48710
 acp = ["agent-client-protocol==0.9.0"]
 # mistral: Voxtral STT + TTS. Pinned to an exact verified-clean version.
 # The `mistralai` PyPI project was quarantined 2026-05-12 after the malicious
@@ -439,108 +459,101 @@ exclude-newer = "14 days"
 # (Termux/Android) it must build from sdist, and the isolated build
 # environment resolves under the same cutoff ("Failed to resolve
 # requirements from build-system.requires ... maturin>=1.9,<2").
-# Upstream currently uses per-package `false` exemptions that require a newer uv
-# lockfile/config schema than Replit's uv 0.9.x. Keep the reviewed list as Marcel
-# metadata; exact pins below still prevent unreviewed version drift.
-[tool.marcel.exclude-newer-package]
-agent-client-protocol = false
-ai-edge-litert = false
-aiohttp = false
-aiohttp-socks = false
-aiosqlite = false
-alibabacloud-dingtalk = false
-anthropic = false
-asyncpg = false
-azure-identity = false
-boto3 = false
-brotlicffi = false
-certifi = false
-concurrent-log-handler = false
-croniter = false
-cryptography = false
-daytona = false
-debugpy = false
-defusedxml = false
-dingtalk-stream = false
-discord-py = false
-edge-tts = false
-elevenlabs = false
-exa-py = false
-fal-client = false
-fastapi = false
-faster-whisper = false
-fire = false
-firecrawl-anydoc = false
-firecrawl-py = false
-google-api-python-client = false
-google-auth = false
-google-auth-httplib2 = false
-google-auth-oauthlib = false
-h2 = false
-hindsight-client = false
-honcho-ai = false
-httplib2 = false
-httpx = false
-httpx2 = false
-huggingface_hub = false
-jinja2 = false
-lark-oapi = false
-markdown = false
-maturin = false
-mautrix = false
-mcp = false
-mem0ai = false
-microsoft-teams-apps = false
-mistralai = false
-modal = false
-nemo-relay = false
-numpy = false
-onnxruntime = false
-openai = false
-opentelemetry-exporter-otlp-proto-http = false
-opentelemetry-sdk = false
-openwakeword = false
-packaging = false
-parallel-web = false
-pathspec = false
-pillow = false
-prompt-toolkit = false
-psutil = false
-pvporcupine = false
-pyasn1 = false
-pydantic = false
-pyjwt = false
-pytest = false
-pytest-asyncio = false
-python-dotenv = false
-python-multipart = false
-python-olm = false
-python-telegram-bot = false
-pyyaml = false
-qrcode = false
-requests = false
-rich = false
-ruamel-yaml = false
-ruff = false
-sentencepiece = false
-setuptools = false
-setuptools-rust = false
-wheel = false
-sherpa-onnx = false
-slack-bolt = false
-slack-sdk = false
-snowballstemmer = false
-sounddevice = false
-starlette = false
-supermemory = false
-tenacity = false
-ty = false
-tzdata = false
-unpaddedbase64 = false
-uvicorn = false
-vercel = false
-websockets = false
-youtube-transcript-api = false
+# uv 0.9.24 supports package-specific cutoffs as PACKAGE=DATE strings. Keep
+# exact pins and build requirements visible even when an index has no upload
+# timestamp; floating requirements remain protected by the global cutoff.
+# The stable far-future date avoids making the lockfile stale every day.
+[tool.uv.exclude-newer-package]
+  "agent-client-protocol" = "2099-01-01T00:00:00Z"
+  "ai-edge-litert" = "2099-01-01T00:00:00Z"
+  "aiohttp" = "2099-01-01T00:00:00Z"
+  "aiohttp-socks" = "2099-01-01T00:00:00Z"
+  "aiosqlite" = "2099-01-01T00:00:00Z"
+  "alibabacloud-dingtalk" = "2099-01-01T00:00:00Z"
+  "anthropic" = "2099-01-01T00:00:00Z"
+  "asyncpg" = "2099-01-01T00:00:00Z"
+  "azure-identity" = "2099-01-01T00:00:00Z"
+  "boto3" = "2099-01-01T00:00:00Z"
+  "brotlicffi" = "2099-01-01T00:00:00Z"
+  "certifi" = "2099-01-01T00:00:00Z"
+  "concurrent-log-handler" = "2099-01-01T00:00:00Z"
+  "croniter" = "2099-01-01T00:00:00Z"
+  "cryptography" = "2099-01-01T00:00:00Z"
+  "daytona" = "2099-01-01T00:00:00Z"
+  "debugpy" = "2099-01-01T00:00:00Z"
+  "defusedxml" = "2099-01-01T00:00:00Z"
+  "dingtalk-stream" = "2099-01-01T00:00:00Z"
+  "discord-py" = "2099-01-01T00:00:00Z"
+  "edge-tts" = "2099-01-01T00:00:00Z"
+  "elevenlabs" = "2099-01-01T00:00:00Z"
+  "exa-py" = "2099-01-01T00:00:00Z"
+  "fal-client" = "2099-01-01T00:00:00Z"
+  "fastapi" = "2099-01-01T00:00:00Z"
+  "faster-whisper" = "2099-01-01T00:00:00Z"
+  "fire" = "2099-01-01T00:00:00Z"
+  "firecrawl-py" = "2099-01-01T00:00:00Z"
+  "google-api-python-client" = "2099-01-01T00:00:00Z"
+  "google-auth" = "2099-01-01T00:00:00Z"
+  "google-auth-httplib2" = "2099-01-01T00:00:00Z"
+  "google-auth-oauthlib" = "2099-01-01T00:00:00Z"
+  "hindsight-client" = "2099-01-01T00:00:00Z"
+  "honcho-ai" = "2099-01-01T00:00:00Z"
+  "httplib2" = "2099-01-01T00:00:00Z"
+  "httpx" = "2099-01-01T00:00:00Z"
+  "httpx2" = "2099-01-01T00:00:00Z"
+  "jinja2" = "2099-01-01T00:00:00Z"
+  "lark-oapi" = "2099-01-01T00:00:00Z"
+  "markdown" = "2099-01-01T00:00:00Z"
+  "mautrix" = "2099-01-01T00:00:00Z"
+  "mcp" = "2099-01-01T00:00:00Z"
+  "mem0ai" = "2099-01-01T00:00:00Z"
+  "microsoft-teams-apps" = "2099-01-01T00:00:00Z"
+  "mistralai" = "2099-01-01T00:00:00Z"
+  "modal" = "2099-01-01T00:00:00Z"
+  "numpy" = "2099-01-01T00:00:00Z"
+  "onnxruntime" = "2099-01-01T00:00:00Z"
+  "openai" = "2099-01-01T00:00:00Z"
+  "opentelemetry-exporter-otlp-proto-http" = "2099-01-01T00:00:00Z"
+  "opentelemetry-sdk" = "2099-01-01T00:00:00Z"
+  "openwakeword" = "2099-01-01T00:00:00Z"
+  "packaging" = "2099-01-01T00:00:00Z"
+  "parallel-web" = "2099-01-01T00:00:00Z"
+  "pathspec" = "2099-01-01T00:00:00Z"
+  "pillow" = "2099-01-01T00:00:00Z"
+  "prompt-toolkit" = "2099-01-01T00:00:00Z"
+  "psutil" = "2099-01-01T00:00:00Z"
+  "pvporcupine" = "2099-01-01T00:00:00Z"
+  "pyasn1" = "2099-01-01T00:00:00Z"
+  "pydantic" = "2099-01-01T00:00:00Z"
+  "pyjwt" = "2099-01-01T00:00:00Z"
+  "pytest" = "2099-01-01T00:00:00Z"
+  "pytest-asyncio" = "2099-01-01T00:00:00Z"
+  "python-dotenv" = "2099-01-01T00:00:00Z"
+  "python-multipart" = "2099-01-01T00:00:00Z"
+  "python-telegram-bot" = "2099-01-01T00:00:00Z"
+  "pyyaml" = "2099-01-01T00:00:00Z"
+  "qrcode" = "2099-01-01T00:00:00Z"
+  "requests" = "2099-01-01T00:00:00Z"
+  "rich" = "2099-01-01T00:00:00Z"
+  "ruamel-yaml" = "2099-01-01T00:00:00Z"
+  "ruff" = "2099-01-01T00:00:00Z"
+  "sentencepiece" = "2099-01-01T00:00:00Z"
+  "setuptools" = "2099-01-01T00:00:00Z"
+  "sherpa-onnx" = "2099-01-01T00:00:00Z"
+  "slack-bolt" = "2099-01-01T00:00:00Z"
+  "slack-sdk" = "2099-01-01T00:00:00Z"
+  "snowballstemmer" = "2099-01-01T00:00:00Z"
+  "sounddevice" = "2099-01-01T00:00:00Z"
+  "starlette" = "2099-01-01T00:00:00Z"
+  "supermemory" = "2099-01-01T00:00:00Z"
+  "tenacity" = "2099-01-01T00:00:00Z"
+  "ty" = "2099-01-01T00:00:00Z"
+  "tzdata" = "2099-01-01T00:00:00Z"
+  "uvicorn" = "2099-01-01T00:00:00Z"
+  "vercel" = "2099-01-01T00:00:00Z"
+  "websockets" = "2099-01-01T00:00:00Z"
+  "wheel" = "2099-01-01T00:00:00Z"
+  "youtube-transcript-api" = "2099-01-01T00:00:00Z"
 
 
 [tool.setuptools]

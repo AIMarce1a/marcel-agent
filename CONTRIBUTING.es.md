@@ -2,6 +2,10 @@
 
 ¡Gracias por contribuir a Marcel Agent! Esta guía cubre todo lo que necesitas: configurar tu entorno de desarrollo, entender la arquitectura, decidir qué construir y conseguir que tu PR sea aceptado.
 
+> **Aviso de traducción:** `CONTRIBUTING.md` en inglés es la guía
+> autoritativa. Esta traducción puede quedar temporalmente desactualizada;
+> cuando exista alguna discrepancia, sigue siempre la versión en inglés.
+
 ---
 
 ## Prioridades de Contribución
@@ -45,7 +49,7 @@ Las habilidades incluidas (en `skills/`) se envían con cada instalación de Mar
 
 Si tu habilidad es oficial y útil pero no universalmente necesaria (ej., una integración de servicio de pago, una dependencia pesada), ponla en **`optional-skills/`** — se envía con el repositorio pero no está activada por defecto. Los usuarios pueden descubrirla a través de `marcel skills browse` (etiquetada como "oficial") e instalarla con `marcel skills install` (sin advertencia de terceros, confianza integrada).
 
-Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Nous Research](https://discord.gg/NousResearch). Los usuarios pueden instalarla con `marcel skills install`.
+Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela con la comunidad de Marcel. Los usuarios pueden instalarla con `marcel skills install`.
 
 ---
 
@@ -81,12 +85,13 @@ Esto no es una barra de calidad — es una decisión de acoplamiento y mantenimi
 ### Clonar e instalar
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
+git clone https://github.com/AdMind-ai/marcel-agent.git
 cd marcel-agent
 
-# Crear venv con Python 3.11
-uv venv venv --python 3.11
-export VIRTUAL_ENV="$(pwd)/venv"
+# Crear el venv fuera del árbol de código con Python 3.11
+uv venv ~/.marcel/venvs/marcel-dev --python 3.11
+export VIRTUAL_ENV="$HOME/.marcel/venvs/marcel-dev"
+export PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Instalar con todos los extras (mensajería, cron, menús CLI, herramientas de desarrollo)
 uv pip install -e ".[all,dev]"
@@ -111,7 +116,7 @@ echo "OPENROUTER_API_KEY=***" >> ~/.marcel/.env
 ```bash
 # Enlace simbólico para acceso global
 mkdir -p ~/.local/bin
-ln -sf "$(pwd)/venv/bin/marcel" ~/.local/bin/marcel
+ln -sf "$VIRTUAL_ENV/bin/marcel" ~/.local/bin/marcel
 
 # Verificar
 marcel doctor
@@ -194,7 +199,7 @@ marcel-agent/
 ├── skills/                   # Habilidades incluidas (copiadas a ~/.marcel/skills/ en la instalación)
 ├── optional-skills/          # Habilidades opcionales oficiales (descubribles vía hub, no activadas por defecto)
 ├── tests/                    # Suite de tests
-├── website/                  # Sitio de documentación (publicado mediante el dominio de compatibilidad upstream)
+├── website/                  # Sitio de documentación (publicado en marcel-agent.com)
 │
 ├── cli-config.yaml.example   # Configuración de ejemplo (copiada a ~/.marcel/config.yaml)
 └── AGENTS.md                 # Guía de desarrollo para asistentes de codificación IA
@@ -514,12 +519,25 @@ Tras el [compromiso de la cadena de suministro de litellm](https://github.com/Be
 
 | Tipo de fuente | Tratamiento requerido | Justificación |
 |---|---|---|
-| **Paquete PyPI** | `>=suelo,<siguiente_mayor` | Las versiones de PyPI son inmutables una vez publicadas, pero pueden empujarse nuevas versiones en tu rango. |
+| **Paquete PyPI** | `==X.Y.Z` (versión exacta) | Las dependencias directas deben coincidir con los pines exactos de `pyproject.toml`; actualiza el pin y regenera `uv.lock` mediante una revisión explícita. |
 | **URL de Git** | SHA completo del commit | Las ramas y etiquetas son refs mutables; el SHA está direccionado por contenido. |
 | **GitHub Actions** | SHA completo del commit + comentario de versión | Las etiquetas de acción son refs mutables. Fija como `uses: owner/action@<sha>  # vX.Y.Z` |
 | **Instalaciones pip solo de CI** | `==exacto` | Builds de CI herméticos; el cambio es aceptable. |
 
-**Cada nueva dependencia de PyPI en un PR debe tener un límite superior `<siguiente_mayor`.** Los PRs que añadan especificaciones `>=X.Y.Z` sin límite superior serán rechazados.
+Ejemplos:
+
+```toml
+# ✅ Correcto: pines exactos, como en pyproject.toml
+"openai==2.21.0"
+"pydantic==2.12.5"
+
+# ❌ Rechazado: los rangos >=suelo,<siguiente_mayor no están permitidos
+"openai>=2.21.0,<3"
+```
+
+**Cada nueva dependencia de PyPI en un PR debe usar `==X.Y.Z` y coincidir con
+el pin declarado en `pyproject.toml`.** Las especificaciones con rangos
+`>=...` o límites de versión abiertos serán rechazadas.
 
 ---
 
@@ -581,7 +599,7 @@ test(tools): añadir tests unitarios para file_operations
 
 ## Reportar Issues
 
-- Usa [GitHub Issues](https://github.com/NousResearch/hermes-agent/issues)
+- Usa [GitHub Issues](https://github.com/AdMind-ai/marcel-agent/issues)
 - Incluye: SO, versión de Python, versión de Marcel (`marcel --version`), traza de error completa
 - Incluye pasos para reproducir
 - Verifica los issues existentes antes de crear duplicados
@@ -591,12 +609,12 @@ test(tools): añadir tests unitarios para file_operations
 
 ## Comunidad
 
-- **Discord**: [discord.gg/NousResearch](https://discord.gg/NousResearch) — para preguntas, mostrar proyectos y compartir habilidades
-- **GitHub Discussions**: Para propuestas de diseño y discusiones de arquitectura
+- **Comunidad de Marcel**: para preguntas, mostrar proyectos y compartir habilidades
+- **Debates de la comunidad**: Para propuestas de diseño y discusiones de arquitectura
 - **Skills Hub**: Sube habilidades especializadas a un registro y compártelas con la comunidad
 
 ---
 
 ## Licencia
 
-Al contribuir, aceptas que tus contribuciones serán licenciadas bajo la [Licencia MIT](LICENSE).
+Al contribuir, aceptas que tus contribuciones serán licenciadas bajo la [Licencia Apache 2.0](LICENSE), salvo que se indique explícitamente lo contrario.

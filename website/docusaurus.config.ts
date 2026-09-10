@@ -7,12 +7,14 @@ const config: Config = {
   tagline: 'The self-improving AI agent',
   favicon: 'img/favicon.ico',
 
-  url: 'https://hermes-agent.nousresearch.com',
+  url: 'https://marcel-agent.com',
   baseUrl: '/docs/',
 
-  organizationName: 'NousResearch',
+  organizationName: 'AdMind-ai',
   projectName: 'marcel-agent',
 
+  // Keep warnings until the translated and legacy-link inventory is clean;
+  // enabling strict mode prematurely would make documentation deploys brittle.
   onBrokenLinks: 'warn',
 
   markdown: {
@@ -83,6 +85,7 @@ const config: Config = {
           editUrl: 'https://github.com/AdMind-ai/marcel-agent/edit/main/website/',
         },
         blog: false,
+        sitemap: {},
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -92,6 +95,12 @@ const config: Config = {
 
   themeConfig: {
     image: 'img/marcel-agent-banner.png',
+    metadata: [
+      {
+        name: 'description',
+        content: 'Documentation for Marcel Agent, a configurable multi-worker AI company framework.',
+      },
+    ],
     // Algolia DocSearch (replaces @easyops-cn/docusaurus-search-local).
     // The local plugin shipped a ~16 MB client-side lunr index that every
     // visitor downloaded and hydrated before their first result; DocSearch
@@ -135,7 +144,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://hermes-agent.nousresearch.com/',
+          href: 'https://marcel-agent.com/docs',
           label: 'Download',
           position: 'left',
         },
@@ -144,7 +153,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://hermes-agent.nousresearch.com',
+          href: 'https://marcel-agent.com',
           label: 'Home',
           position: 'right',
         },
@@ -154,8 +163,8 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://discord.gg/NousResearch',
-          label: 'Discord',
+          href: 'https://github.com/AdMind-ai/marcel-agent',
+          label: 'Community',
           position: 'right',
         },
       ],
@@ -175,7 +184,7 @@ const config: Config = {
         {
           title: 'Community',
           items: [
-            { label: 'Discord', href: 'https://discord.gg/NousResearch' },
+            { label: 'Marcel community', href: 'https://github.com/AdMind-ai/marcel-agent' },
             { label: 'GitHub Issues', href: 'https://github.com/AdMind-ai/marcel-agent/issues' },
             { label: 'Skills Hub', href: 'https://agentskills.io' },
           ],
@@ -183,9 +192,9 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            { label: 'Desktop Download', href: 'https://hermes-agent.nousresearch.com/' },
+            { label: 'Marcel Agent', href: 'https://marcel-agent.com' },
             { label: 'GitHub', href: 'https://github.com/AdMind-ai/marcel-agent' },
-            { label: 'Nous Research', href: 'https://nousresearch.com' },
+            { label: 'Documentation', href: 'https://marcel-agent.com/docs' },
           ],
         },
       ],

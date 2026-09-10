@@ -13,6 +13,9 @@ For the full platform support matrix (which OSes, distribution methods, and
 platform-gated features are supported), see **[Platform Support](./platform-support.md)**.
 :::
 
+This page describes the supported prerelease install paths. For safe upgrades,
+backups, and restoring a previous version, see **[Update and rollback](./update-rollback.md)**.
+
 ## Quick Install
 ### With the Marcel Desktop installer on macOS or Windows (recommended)
 To easily install the command-line and desktop applications, [download the Marcel Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
@@ -20,17 +23,27 @@ To easily install the command-line and desktop applications, [download the Marce
 ### Without Marcel Desktop:
 For a command-line only install without Marcel Desktop, run:
 
-#### Linux / macOS / WSL2 / Android (Termux)
+#### Linux
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
 ```
 
-#### Windows (native)
+#### macOS
+The prerelease supports Apple Silicon macOS 13 or newer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
+```
+
+#### Windows
 
 Run in powershell:
 ```powershell
 iex (irm https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.ps1)
 ```
+
+For WSL2, run the Linux installer from the WSL shell. Do not run the
+Windows installer against a WSL filesystem.
 
 If you want to install & run Marcel Desktop after a command-line only install, simply run
 ```bash
@@ -87,6 +100,27 @@ You don't need to rebuild your setup from scratch. Restore a full backup with `m
 :::
 
 ---
+
+## Linux server (dedicated service user)
+
+For a headless Ubuntu 22.04/24.04 or Debian 12 server, create an unprivileged
+service account and run the installer as that account:
+
+```bash
+sudo apt update
+sudo apt install -y git curl xz-utils
+sudo useradd --create-home --shell /bin/bash marcel
+sudo -iu marcel
+curl -fsSL https://raw.githubusercontent.com/AdMind-ai/marcel-agent/main/scripts/install.sh | bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+marcel doctor
+```
+
+Keep credentials and `MARCEL_HOME` owned by the service user. If the gateway
+must run after logout, an administrator can enable lingering with
+`sudo loginctl enable-linger marcel`. See [Update and rollback](./update-rollback.md)
+before upgrading a server.
 
 ## Prerequisites
 

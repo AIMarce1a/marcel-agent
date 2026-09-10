@@ -181,6 +181,29 @@ def _canonical(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
+_EXCLUDE_NEWER_DATE = "2099-01-01T00:00:00Z"
+
+
+def _exclude_newer_packages(uv_cfg):
+    """Parse uv 0.9.24's active PACKAGE=DATE representation."""
+    entries = uv_cfg.get("exclude-newer-package")
+    assert isinstance(entries, dict), (
+        "[tool.uv].exclude-newer-package must be a PACKAGE=DATE map "
+        "supported by uv 0.9.24"
+    )
+    parsed = {}
+    for name, date in entries.items():
+        assert isinstance(name, str) and isinstance(date, str)
+        assert date == _EXCLUDE_NEWER_DATE, (
+            "every package exemption must use the stable far-future RFC3339 "
+            f"date {_EXCLUDE_NEWER_DATE!r}: {name}={date}"
+        )
+        canonical = _canonical(name)
+        assert canonical not in parsed, f"duplicate package exemption: {name!r}"
+        parsed[canonical] = date
+    return parsed
+
+
 def _pins_from_specs(specs):
     """Map canonical package name -> set of exact-pinned versions seen."""
     pins: dict[str, set[str]] = {}
@@ -262,18 +285,14 @@ def test_build_system_requires_exempt_from_exclude_newer():
     Exempting an exact-pinned build requirement costs nothing: the version
     cannot move without a reviewed pin bump, so exclude-newer adds no float
     protection for it. Every build requirement must therefore appear in the
-    ``exclude-newer-package`` whitelist (set to ``false``) for as long as a
-    relative ``exclude-newer`` cutoff is configured.
+     ``exclude-newer-package`` package-date map for as long as a relative
+     ``exclude-newer`` cutoff is configured.
     """
     data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     uv_cfg = data.get("tool", {}).get("uv", {})
     if "exclude-newer" not in uv_cfg:
         pytest.skip("no exclude-newer cutoff configured — nothing to exempt")
-    whitelist = {
-        _canonical(name)
-        for name, enabled in uv_cfg.get("exclude-newer-package", {}).items()
-        if enabled is False
-    }
+    whitelist = set(_exclude_newer_packages(uv_cfg))
     build_requires = {
         _canonical(_distribution_name(req))
         for req in data.get("build-system", {}).get("requires", [])
@@ -283,6 +302,26 @@ def test_build_system_requires_exempt_from_exclude_newer():
         "build-system.requires packages are subject to the exclude-newer "
         "cutoff but missing from the [tool.uv].exclude-newer-package "
         f"whitelist — fresh builds brick when upload dates are invisible: {missing}"
+    )
+
+
+def test_exclude_newer_uses_uv_package_date_entries_for_all_pins():
+    """The resolver must consume the supported uv package-date syntax."""
+    data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    uv_cfg = data.get("tool", {}).get("uv", {})
+    if "exclude-newer" not in uv_cfg:
+        pytest.skip("no exclude-newer cutoff configured — nothing to exempt")
+
+    active = set(_exclude_newer_packages(uv_cfg))
+    expected = set(_pins_from_specs(_pyproject_pinned_specs()))
+    expected.update(
+        _canonical(_distribution_name(req))
+        for req in data.get("build-system", {}).get("requires", [])
+    )
+    assert active == expected, (
+        "exclude-newer exemptions must exactly cover every exact project pin "
+        "and build requirement (and no floating-only dependencies); "
+        f"missing={sorted(expected - active)}, unexpected={sorted(active - expected)}"
     )
 
 
@@ -301,18 +340,14 @@ def test_exact_pinned_deps_exempt_from_exclude_newer():
 
     Every exact-pinned package in [project].dependencies and
     optional-dependencies must therefore appear in the
-    ``exclude-newer-package`` whitelist (set to ``false``) for as long as a
-    relative ``exclude-newer`` cutoff is configured.
+     ``exclude-newer-package`` package-date map for as long as a relative
+     ``exclude-newer`` cutoff is configured.
     """
     data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     uv_cfg = data.get("tool", {}).get("uv", {})
     if "exclude-newer" not in uv_cfg:
         pytest.skip("no exclude-newer cutoff configured — nothing to exempt")
-    whitelist = {
-        _canonical(name)
-        for name, enabled in uv_cfg.get("exclude-newer-package", {}).items()
-        if enabled is False
-    }
+    whitelist = set(_exclude_newer_packages(uv_cfg))
     missing = sorted(set(_pins_from_specs(_pyproject_pinned_specs())) - whitelist)
     assert not missing, (
         "exact-pinned packages are subject to the exclude-newer cutoff but "

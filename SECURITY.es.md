@@ -1,5 +1,7 @@
 # Política de Seguridad de Marcel Agent
 
+> **Aviso de traducción:** Esta traducción está en proceso de actualización. La política de seguridad en inglés es la fuente autorizada; no se debe asumir que esta traducción esté completamente sincronizada.
+
 Este documento describe el modelo de confianza de Marcel Agent, identifica el
 único límite de seguridad que el proyecto trata como estructural y define el
 alcance para los informes de vulnerabilidades.

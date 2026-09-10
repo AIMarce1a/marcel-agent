@@ -19,15 +19,16 @@ billing are available at:
 - Usage: https://marcel-agent.com/usage
 - Billing: https://marcel-agent.com/billing
 
-The implemented MVP endpoints are `GET /health`, `GET /v1/models`, and
-`POST /v1/chat/completions`. Health is unauthenticated. Every `/v1` operation
-requires the authorization described below.
+Only these endpoints are implemented in the current MVP:
+`GET /health`, `GET /v1/models`, and `POST /v1/chat/completions`. Health is
+unauthenticated. Every implemented `/v1` operation requires the authorization
+described below.
 
-The OpenAPI schema also defines planned media and asynchronous-job extensions:
+The OpenAPI schema also reserves these contract-only, planned endpoints:
 `POST /v1/images/generations`, `POST /v1/videos/generations`, and
-`GET /v1/jobs/{job_id}`. These endpoints are contract-only and must not be
-presented as generally available until their implementation and release are
-announced.
+`GET /v1/jobs/{job_id}`. They are not implemented or generally available.
+Their implementation and release must be announced before clients treat them
+as available.
 
 ## Authentication and BYOK
 
@@ -96,14 +97,14 @@ it returns SSE. Each event is `data: <JSON ChatCompletionChunk>` and completion
 is `data: [DONE]`; tool-call deltas can be split and are joined by `index`.
 When `stream_options.include_usage` is true, the terminal chunk includes usage.
 
-### Planned media and job semantics
+### Reserved media and job contract (planned, not implemented)
 
 When implemented, image generation may complete immediately or return a `202`
 job. Video generation will return a `202` job. Clients will poll
 `GET /v1/jobs/{job_id}` until its terminal status is `succeeded`, `failed`, or
 `cancelled`. Failed jobs will include the same error shape used by HTTP
-failures. These semantics define the intended contract, not current
-availability.
+failures. These semantics define the reserved contract, not current
+availability; images, videos, and jobs remain planned until explicitly released.
 
 ## Errors and versioning
 
