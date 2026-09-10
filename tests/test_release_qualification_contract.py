@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
+VALIDATOR_PATH = REPO_ROOT / ".github/scripts/validate-doctor.py"
+_SPEC = importlib.util.spec_from_file_location("validate_doctor", VALIDATOR_PATH)
+assert _SPEC and _SPEC.loader
+validate_doctor = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(validate_doctor)
 
 
 def test_installers_retain_anonymous_fresh_clone_and_pinned_commit_paths():
@@ -56,3 +64,77 @@ def test_release_tag_picker_uses_semver_precedence(tmp_path):
         '["v0.21.0-rc.1","v0.21.0-rc.2","v0.21.0",'
         '"v2026.4.8","v2026.4.13"]'
     )
+
+
+def test_workflow_doctor_policy_is_strict_and_secret_free():
+    workflow = (REPO_ROOT / ".github/workflows/install-e2e.yml").read_text()
+    assert "NO_COLOR=1 marcel doctor" in workflow
+    assert "doctor_status=$?" in workflow
+    assert "$doctorExit = $LASTEXITCODE" in workflow
+    assert "validate-doctor.py" in workflow
+    assert "github.workflow_sha" in workflow
+    assert "path: .qualification-candidate" in workflow
+    assert "CANDIDATE_DIR" in workflow
+    assert "Capture trusted Python" in workflow
+    assert "steps.trusted-python-unix.outputs.path" in workflow
+    assert "steps.trusted-python-windows.outputs.path" in workflow
+    assert "TRUSTED_PYTHON" in workflow
+    assert "RUNNER_TEMP/marcel-doctor.txt" in workflow
+    assert "marcel-doctor.status" in workflow
+    assert workflow.index("path: .qualification-candidate") < workflow.index(
+        "path: .qualification-trusted"
+    )
+    assert "persist-credentials: false" in workflow
+
+
+@pytest.fixture
+def pristine_doctor_output() -> str:
+    return "\n".join(
+        [
+            "◆ Required Packages",
+            "✓ OpenAI SDK",
+            "✓ Rich (terminal UI)",
+            "✓ python-dotenv",
+            "✓ PyYAML",
+            "✓ HTTPX",
+            "⚠ Config version outdated (v0 → v40) (new settings available)",
+            "✗ Marcel identity and configuration (not configured)",
+            "Found 2 issue(s) to address:",
+            "1. Run 'marcel doctor --fix' or 'marcel setup' to migrate config",
+            "2. Run `marcel setup` to create Marcel configuration.",
+            "Tip: run 'marcel doctor --fix' to auto-fix what's possible.",
+        ]
+    )
+
+
+def test_doctor_validator_accepts_pristine_status_zero_and_one(pristine_doctor_output):
+    validate_doctor.validate(pristine_doctor_output, 0)
+    validate_doctor.validate(pristine_doctor_output, 1)
+
+
+def test_doctor_validator_rejects_other_exit_status(pristine_doctor_output):
+    with pytest.raises(ValueError):
+        validate_doctor.validate(pristine_doctor_output, 2)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda text: text.replace("✗ Marcel", "✗ Extra\n✗ Marcel"),
+        lambda text: text.replace("Found 2 issue(s) to address:", "Found 2 issue(s) to address:\nFound 2 issue(s) to address:"),
+        lambda text: text.replace("✓ HTTPX", "✓ HTTPX\n✓ HTTPX"),
+        lambda text: text.replace("✓ PyYAML", ""),
+        lambda text: text.replace("1. Run", "3. Extra\n1. Run"),
+        lambda text: text.replace("Tip: run", "Traceback: truncated\nTip: run"),
+        lambda text: text.replace(
+            "⚠ Config version outdated (v0 → v40) (new settings available)",
+            "⚠ Config version outdated (v0 → v40) (new settings available)\n"
+            "⚠ Config version outdated (v0 → v40) (new settings available)",
+        ),
+        lambda text: text.replace("✗ Marcel", "Exception: bad\n✗ Marcel"),
+        lambda text: text[:-10],
+    ],
+)
+def test_doctor_validator_rejects_adversarial_mutations(pristine_doctor_output, mutation):
+    with pytest.raises(ValueError):
+        validate_doctor.validate(mutation(pristine_doctor_output), 0)

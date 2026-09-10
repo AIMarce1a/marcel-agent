@@ -179,46 +179,98 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ needs.candidate-resolve.outputs.sha }}
+          path: .qualification-candidate
           fetch-depth: 1
           persist-credentials: false
+      - name: Capture trusted Python (Unix)
+        if: matrix.platform != 'windows'
+        id: trusted-python-unix
+        run: |
+          set -euo pipefail
+          printf 'path=%s\n' "$(python3 -c 'import sys; print(sys.executable)')" >> "$GITHUB_OUTPUT"
+      - name: Capture trusted Python (Windows)
+        if: matrix.platform == 'windows'
+        id: trusted-python-windows
+        shell: pwsh
+        run: |
+          $python = (Get-Command python -CommandType Application).Source
+          "path=$python" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Candidate clean install (Unix)
         if: matrix.platform != 'windows'
         env:
           CANDIDATE_SHA: ${{ needs.candidate-resolve.outputs.sha }}
+          CANDIDATE_DIR: ${{ github.workspace }}/.qualification-candidate
           MARCEL_HOME: ${{ runner.temp }}/marcel-candidate-home
           INSTALL_DIR: ${{ runner.temp }}/marcel-candidate-install
+          TRUSTED_PYTHON: ${{ steps.trusted-python-unix.outputs.path }}
         run: |
           set -euo pipefail
-          bash scripts/install.sh --commit "$CANDIDATE_SHA" --non-interactive \
+          cd "$CANDIDATE_DIR"
+          bash ./scripts/install.sh --commit "$CANDIDATE_SHA" --non-interactive \
             --skip-browser --skip-setup --marcel-home "$MARCEL_HOME" --dir "$INSTALL_DIR"
           test "$(git -C "$INSTALL_DIR" rev-parse HEAD)" = "$CANDIDATE_SHA"
           export PATH="$INSTALL_DIR/venv/bin:$HOME/.local/bin:$PATH"
           marcel --version
-          doctor_log="$(mktemp)"
-          if ! marcel doctor 2>&1 | tee "$doctor_log"; then
-            echo "marcel doctor failed" >&2
-            exit 1
-          fi
-          ! grep -Eq 'Found [0-9]+ issue|require manual intervention' "$doctor_log"
+          set +e
+          NO_COLOR=1 marcel doctor >"$RUNNER_TEMP/marcel-doctor.txt" 2>&1
+          doctor_status=$?
+          set -e
+          printf '%s\n' "$doctor_status" >"$RUNNER_TEMP/marcel-doctor.status"
       - name: Candidate clean install (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         env:
           CANDIDATE_SHA: ${{ needs.candidate-resolve.outputs.sha }}
+          CANDIDATE_DIR: ${{ github.workspace }}\.qualification-candidate
           MARCEL_HOME: ${{ runner.temp }}\marcel-candidate-home
           INSTALL_DIR: ${{ runner.temp }}\marcel-candidate-install
+          TRUSTED_PYTHON: ${{ steps.trusted-python-windows.outputs.path }}
         run: |
           $ErrorActionPreference = "Stop"
+          Push-Location $env:CANDIDATE_DIR
           & .\scripts\install.ps1 -Commit $env:CANDIDATE_SHA -NonInteractive `
             -SkipSetup -MarcelHome $env:MARCEL_HOME -InstallDir $env:INSTALL_DIR
+          Pop-Location
           $installed = (git -C $env:INSTALL_DIR rev-parse HEAD).Trim()
           if ($installed -ne $env:CANDIDATE_SHA) { throw "Installer resolved $installed, expected $env:CANDIDATE_SHA" }
           $env:PATH = "$env:INSTALL_DIR\venv\Scripts;$env:USERPROFILE\.local\bin;$env:PATH"
           marcel --version
           $doctorLog = Join-Path $env:RUNNER_TEMP "marcel-doctor.txt"
-          & marcel doctor 2>&1 | Tee-Object -FilePath $doctorLog
-          if ($LASTEXITCODE -ne 0) { throw "marcel doctor failed" }
-          $doctorText = Get-Content -Raw $doctorLog
-          if ($doctorText -match "Found [0-9]+ issue|require manual intervention") {
-            throw "marcel doctor reported fatal issues"
+          $doctorExit = $null
+          $doctorInvocationError = $null
+          $env:NO_COLOR = "1"
+          try {
+            & marcel doctor *> $doctorLog
+            $doctorExit = $LASTEXITCODE
+          } catch {
+            $doctorExit = if ($LASTEXITCODE -is [int]) { $LASTEXITCODE } else { 1 }
           }
+          if ($null -eq $doctorExit) { throw "marcel doctor did not provide an exit code" }
+          "$doctorExit" | Out-File -FilePath (Join-Path $env:RUNNER_TEMP "marcel-doctor.status") -Encoding ascii
+      # This checkout happens only after candidate code has finished. The
+      # candidate lives in a sibling path, so neither checkout can remove the
+      # other, and candidate code cannot replace the validator before use.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .qualification-trusted
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate candidate doctor output (Unix)
+        if: matrix.platform != 'windows'
+        env:
+          TRUSTED_PYTHON: ${{ steps.trusted-python-unix.outputs.path }}
+        run: |
+          set -euo pipefail
+          "$TRUSTED_PYTHON" "$GITHUB_WORKSPACE/.qualification-trusted/.github/scripts/validate-doctor.py" \
+            "$RUNNER_TEMP/marcel-doctor.txt" "$(cat "$RUNNER_TEMP/marcel-doctor.status")"
+      - name: Validate candidate doctor output (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        env:
+          TRUSTED_PYTHON: ${{ steps.trusted-python-windows.outputs.path }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $trustedValidator = Join-Path $env:GITHUB_WORKSPACE ".qualification-trusted\.github\scripts\validate-doctor.py"
+          $status = (Get-Content (Join-Path $env:RUNNER_TEMP "marcel-doctor.status") -Raw).Trim()
+          & $env:TRUSTED_PYTHON $trustedValidator (Join-Path $env:RUNNER_TEMP "marcel-doctor.txt") $status
