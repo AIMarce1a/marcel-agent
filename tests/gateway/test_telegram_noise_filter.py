@@ -253,8 +253,7 @@ def test_chat_gateway_applies_marcel_branding(monkeypatch):
     sanitized = _sanitize_gateway_final_response(Platform.TELEGRAM, raw)
 
     assert ".marcel" not in sanitized
-    assert "Marcel" not in sanitized
-    assert "marcel setup" not in sanitized
+    assert "Marcel" in sanitized
     assert "marcel setup" in sanitized
 
 

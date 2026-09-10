@@ -1,5 +1,8 @@
 # Marcel
 
+On Windows, install natively with PowerShell using
+[`scripts/install.ps1`](scripts/install.ps1).
+
 Marcel is an autonomous, client-configurable agent framework for orchestrating capable AI work.
 It provides memory, schedules, messaging gateways, skills, plugins, and concurrent delegation
 through a business-oriented orchestration layer.

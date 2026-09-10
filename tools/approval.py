@@ -797,9 +797,6 @@ def _run_approval_gate(
     Unattended deny text is ``ctx.block_message(subject, noun, advice)`` unless the caller passes
     an explicit ``*_deny_message`` (the file-tool write gates word their own).
     """
-    # Hardline blocks are the caller's job BEFORE this gate, so yolo here only skips the recoverable approval layer.
-    if _yolo_active():
-        return _approved()
     session_key = get_current_session_key()
     if is_approved(session_key, pattern_key):
         return _approved()
@@ -840,6 +837,12 @@ def _run_approval_gate(
                     pattern_key=pattern_key, description=description)
         logger.warning("%s (pattern: %s): %s — set MARCEL_INTERACTIVE or "
                        "MARCEL_GATEWAY_SESSION to require approval.", *log_args)
+        return _approved()
+
+    # Hardline blocks are the caller's job BEFORE this gate, so yolo only skips
+    # the recoverable approval layer. Unattended deny policy was evaluated above
+    # and must not be turned into an allow by a broad bypass.
+    if _yolo_active():
         return _approved()
 
     return _human_decision(
@@ -896,6 +899,10 @@ def check_dangerous_command(command: str, env_type: str,
     blocked = _floor_block(command)
     if blocked is not None:
         return blocked
+    for ctx in _unattended_contexts():
+        result = _unattended_deny(command, ctx)
+        if result is not None:
+            return result
     if _yolo_active():
         return _approved()
     if _command_matches_permanent_allowlist(command):
@@ -990,6 +997,12 @@ def check_all_command_guards(command: str, env_type: str,
         return blocked
 
     approval_mode = approval_context._get_approval_mode()
+    # Per-surface unattended policy is a security floor, not an interactive
+    # approval preference. Check it before mode=off/yolo.
+    for ctx in _unattended_contexts():
+        result = _unattended_deny(command, ctx)
+        if result is not None:
+            return result
     if _yolo_active() or approval_mode == "off":
         return _approved()
     if _command_matches_permanent_allowlist(command):
@@ -1068,9 +1081,6 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
     if _should_skip_container_guards(env_type, has_host_access=has_host_access):
         return _approved()
     approval_mode = approval_context._get_approval_mode()
-    if _yolo_active() or approval_mode == "off":
-        return _approved()
-
     # (-q clears the presence flags, but its unattended context resolves first anyway.)
     approval_callback, is_cli, is_gateway, is_ask = _presence()
     # No user is present to approve arbitrary code in -q / cron / unattended
@@ -1082,6 +1092,8 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
                 "subprocess calls that bypass shell-string approval checks). " + ctx.exec_tail,
                 pattern_key=pattern_key, description=description, outcome="blocked",
             )
+        return _approved()
+    if _yolo_active() or approval_mode == "off":
         return _approved()
 
     # Only gateway/ask contexts get the one-shot whole-script approval. In an interactive CLI the script's terminal()

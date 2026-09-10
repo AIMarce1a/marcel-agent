@@ -38,6 +38,14 @@ _HANDOFF_DIR = Path(os.environ.get("TMPDIR", "/tmp")) / "marcel-isolation-probe"
 _HANDOFF_DIR.mkdir(exist_ok=True)
 
 
+def _self_test_env() -> dict[str, str]:
+    """Keep an outer CI matrix from changing a nested runner self-test."""
+    env = os.environ.copy()
+    env.pop("MARCEL_TEST_SLICE", None)
+    env.pop("MARCEL_TEST_WORKERS", None)
+    return env
+
+
 def _handoff_path_for(nonce: str) -> Path:
     return _HANDOFF_DIR / f"grandchild-{nonce}.json"
 
@@ -73,7 +81,7 @@ def test_progress_output_tolerates_legacy_stdout_encoding(tmp_path: Path) -> Non
     probe = probe_dir / "test_probe_smoke.py"
     probe.write_text("def test_smoke():\n    assert True\n", encoding="utf-8")
 
-    env = os.environ.copy()
+    env = _self_test_env()
     env["PYTHONIOENCODING"] = "cp1252:strict"
 
     proc = subprocess.run(
@@ -181,6 +189,7 @@ def test_grandchild_leak_is_killed_by_runner(tmp_path: Path) -> None:
             "30",
         ],
         cwd=repo_root,
+        env=_self_test_env(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         # The runner declares its stdio UTF-8 (see _make_stdio_glyph_safe);
@@ -259,6 +268,7 @@ def _run_runner(probe_dir: Path, *extra: str) -> subprocess.CompletedProcess:
         [sys.executable, str(runner), "--paths", str(probe_dir),
          "-j", "1", "--file-timeout", "30", *extra],
         cwd=repo_root,
+        env=_self_test_env(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         # The runner declares its stdio UTF-8 (see _make_stdio_glyph_safe);
@@ -304,6 +314,7 @@ def test_positional_path_not_treated_as_flag(tmp_path: Path) -> None:
         [sys.executable, str(runner), str(probe_dir), "-j", "1",
          "--file-timeout", "30", "-q"],
         cwd=repo_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env=_self_test_env(),
         encoding="utf-8", errors="replace", timeout=60,
     )
     assert proc.returncode == 0, proc.stdout
@@ -347,6 +358,7 @@ def test_file_retry_self_heals_and_prints_both_attempts(tmp_path: Path) -> None:
             "-q",
         ],
         cwd=repo_root,
+        env=_self_test_env(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -391,6 +403,7 @@ def test_node_id_selector_runs_the_named_test(tmp_path: Path) -> None:
         [sys.executable, str(repo_root / "scripts" / "run_tests_parallel.py"),
          f"{target}::test_alpha", "-j", "1", "--file-timeout", "30"],
         cwd=repo_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env=_self_test_env(),
         text=True, timeout=60,
     )
     assert proc.returncode == 0, proc.stdout
@@ -410,6 +423,7 @@ def test_explicit_k_wins_over_node_id_inference(tmp_path: Path) -> None:
          f"{target}::test_alpha", "-k", "test_beta",
          "-j", "1", "--file-timeout", "30"],
         cwd=repo_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env=_self_test_env(),
         text=True, timeout=60,
     )
     # -k test_beta wins: one test ran, and it wasn't filtered to nothing.
@@ -437,6 +451,7 @@ def test_multiple_absolute_paths_split_on_pathsep(tmp_path: Path) -> None:
          "--paths", os.pathsep.join([str(dir_a), str(dir_b)]),
          "-j", "1", "--file-timeout", "30", "-q"],
         cwd=repo_root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env=_self_test_env(),
         encoding="utf-8", errors="replace", timeout=60,
     )
     assert proc.returncode == 0, proc.stdout

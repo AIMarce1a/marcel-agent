@@ -586,10 +586,11 @@ class GatewayInboundMixin:
         logger.debug("PRIORITY interrupt for session %s", _quick_key)
         _interrupt_text = event.text
         if self._pending_event_audio_paths(event):
-            _interrupt_text, _ = await self._transcribe_and_echo_pending_voice(
+            _enriched_text, _transcripts = await self._transcribe_and_echo_pending_voice(
                 event, self._adapter_for_source(source), source, event.text or "",
                 log_context="Voice-priority-interrupt",
             )
+            _interrupt_text = self._quoted_voice_transcripts(_transcripts) or _enriched_text
         elif not _interrupt_text and getattr(event, "media_urls", None):
             _interrupt_text = _build_media_placeholder(event)
         # Delivered via adapter._pending_messages (read by _run_agent); never also buffered on self
@@ -2051,3 +2052,10 @@ class GatewayInboundMixin:
         except Exception as trans_exc:
             logger.warning("%s transcription failed: %s", log_context, trans_exc)
             return text, []
+
+    @staticmethod
+    def _quoted_voice_transcripts(transcripts: List[str]) -> str:
+        """Return only quoted transcript text for a pending agent turn."""
+        return "\n\n".join(
+            f'"{transcript.strip()}"' for transcript in transcripts if transcript.strip()
+        )

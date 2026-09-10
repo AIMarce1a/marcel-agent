@@ -745,7 +745,10 @@ def _banner_left_lines(model: str, cwd: str, session_id, context_length, provide
     else:
         model_short = model.split("/")[-1].removesuffix(".gguf")
         lines.append(f"[{accent}]{_short_label(model_short)}[/]{ctx_str}{nous_str}")
-    if os.getenv("MARCEL_YOLO_MODE"):
+    # Environment values are user/config input; strings such as "0" and
+    # "false" must not present a bypass as active.
+    from utils import env_var_enabled
+    if env_var_enabled("MARCEL_YOLO_MODE"):
         lines.append(f"[bold red]⚠ YOLO mode[/] [dim {dim}]— all approval prompts bypassed[/]")
     lines.append(f"[dim {dim}]{cwd}[/]")
     if session_id:

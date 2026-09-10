@@ -744,20 +744,6 @@ def _run_setup_wizard_impl(args):
     if section:
         _run_setup_section(config, section)
         return
-    # Marcel is the public product.  A bare setup invocation must therefore
-    # always stay in the Marcel wizard, even when an installer, alias, or
-    # compatibility launcher invokes the internal ``marcel`` console script.
-    # Legacy setup sections remain available only when explicitly requested.
-    if not getattr(args, "portal", False):
-        _print_banner(
-            "│                Marcel Setup Wizard                     │",
-            "├─────────────────────────────────────────────────────────┤",
-            "│  Set up your agent, models, capabilities and channels. │",
-            "│  Press Ctrl+C at any time to exit.                     │",
-        )
-        _run_setup_steps([("Marcel Agent", lambda: setup_marcel(config))])
-        return
-
     # Existing installation == a provider is configured
     from marcel_cli.auth import get_active_provider
     is_existing = bool(get_env_value("OPENROUTER_API_KEY") or get_env_value("OPENAI_BASE_URL")

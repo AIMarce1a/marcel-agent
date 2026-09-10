@@ -226,6 +226,13 @@ def resolve_name(
     """Resolve a bare *name*: ``(entry, candidates)`` — a unique case-insensitive match in
     ``entry``, else ``None`` with the partial matches (empty = nothing similar, >1 = ambiguous)."""
     lowered = name.strip().lower()
-    exact = [e for e in entries if e.name.lower() == lowered]
-    matches = exact or [e for e in entries if lowered in e.name.lower()]
+    # The public Marcel branding replaced the historical Hermes name.  Keep
+    # bare index names discoverable during the transition without rewriting
+    # the canonical names stored in the community index.
+    aliases = {lowered, lowered.replace("marcel", "hermes")}
+    exact = [e for e in entries if e.name.lower() in aliases]
+    matches = exact or [
+        e for e in entries
+        if any(alias in e.name.lower() for alias in aliases)
+    ]
     return (matches[0] if len(matches) == 1 else None), matches

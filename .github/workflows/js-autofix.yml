@@ -109,17 +109,19 @@ jobs:
             : > js-fix.patch
           else
             git diff -- . "${EXCLUDES[@]}" > js-fix.patch
-            echo "has-fixes=true" >> "$GITHUB_OUTPUT"
-            echo "Patch size: $(wc -c < js-fix.patch) bytes"
 
             # Reject patches that touch anything outside JS/TS/JSON sources.
             # `npm run fix` should only ever modify those; anything else means
             # eslint/prettier or a plugin went rogue and we refuse to ship it.
             BAD=$(git diff --name-only -- . "${EXCLUDES[@]}" | grep -vE '\.(js|cjs|mjs|ts|tsx|json)$' || true)
             if [ -n "$BAD" ]; then
-              echo "::error::Refusing to upload patch — touches disallowed files:"
+              echo "::warning::Ignoring patch — touches disallowed files:"
               echo "$BAD"
-              exit 1
+              : > js-fix.patch
+              echo "has-fixes=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "has-fixes=true" >> "$GITHUB_OUTPUT"
+              echo "Patch size: $(wc -c < js-fix.patch) bytes"
             fi
           fi
 

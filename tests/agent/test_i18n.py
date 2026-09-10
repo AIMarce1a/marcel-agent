@@ -157,7 +157,6 @@ def test_runtime_branding_hides_absolute_legacy_storage_paths():
     )
 
     assert ".marcel" not in rendered
-    assert "marcel model" not in rendered
     assert "Marcel private configuration store" in rendered
     assert "marcel model" in rendered
 

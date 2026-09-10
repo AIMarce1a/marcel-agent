@@ -3331,10 +3331,11 @@ class GatewayTurnMixin:
                 # Transcribe audio BEFORE it becomes the next user turn (real transcript, not a path).
                 _pending_text = pending_event.text or ""
                 if self._pending_event_audio_paths(pending_event):
-                    pending, _ = await self._transcribe_and_echo_pending_voice(
+                    _enriched_pending, _transcripts = await self._transcribe_and_echo_pending_voice(
                         pending_event, adapter, source, _pending_text, log_context="Voice-drain",
                         metadata={"thread_id": source.thread_id} if source.thread_id else None,
                     )
+                    pending = self._quoted_voice_transcripts(_transcripts) or _enriched_pending
                     pending = pending or _build_media_placeholder(pending_event)
                 else:
                     pending = _pending_text or _build_media_placeholder(pending_event)

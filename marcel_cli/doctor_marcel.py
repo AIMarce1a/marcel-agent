@@ -10,9 +10,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from marcel_cli.doctor_report import Finding, check_fail, check_info, check_ok, check_warn
+from marcel_cli.config import read_user_config_raw
 
 
 def _mapping(value: Any) -> dict[str, Any]:
@@ -24,8 +23,8 @@ def _read_config(home: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        return _mapping(yaml.safe_load(path.read_text(encoding="utf-8")))
-    except (OSError, yaml.YAMLError) as exc:
+        return _mapping(read_user_config_raw(path))
+    except OSError as exc:
         check_warn("Marcel configuration could not be read", f"({exc})")
         return {}
 
