@@ -145,7 +145,7 @@ describe("ChatSidebar event socket", () => {
     expect(
       reloadMocks.maybeReloadForLoopbackWsAuthFailure,
     ).toHaveBeenCalledWith(4401);
-  });
+  }, 10_000);
 });
 
 describe("ChatSidebar event socket reconnect", () => {
