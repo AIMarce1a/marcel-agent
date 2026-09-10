@@ -17,7 +17,7 @@ def test_installers_retain_anonymous_fresh_clone_and_pinned_commit_paths():
         assert "AdMind-ai/marcel-agent.git" in installer
         assert "Commit" in installer
     assert 'git clone --depth 1 --branch "$BRANCH"' in shell
-    assert "git clone --depth 1 --branch $Branch" in powershell
+    assert "git -c windows.appendAtomically=false clone --depth 1 --branch $Branch" in powershell
     assert '--commit expects a hex SHA' in shell
     assert 'git checkout --detach "$INSTALL_COMMIT"' in shell
     assert 'git ... checkout --detach $Commit' not in powershell
