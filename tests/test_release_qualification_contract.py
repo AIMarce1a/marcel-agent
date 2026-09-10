@@ -78,6 +78,11 @@ def test_workflow_doctor_policy_is_strict_and_secret_free():
     assert "Capture trusted Python" in workflow
     assert "steps.trusted-python-unix.outputs.path" in workflow
     assert "steps.trusted-python-windows.outputs.path" in workflow
+    assert "Get-Command python -CommandType Application |" in workflow
+    assert "Select-Object -First 1 -ExpandProperty Source" in workflow
+    assert '[IO.Path]::GetExtension($python) -ne ".exe"' in workflow
+    assert "Test-Path -LiteralPath $python -PathType Leaf" in workflow
+    assert "(Get-Command python -CommandType Application).Source" not in workflow
     assert "TRUSTED_PYTHON" in workflow
     assert "RUNNER_TEMP/marcel-doctor.txt" in workflow
     assert "marcel-doctor.status" in workflow

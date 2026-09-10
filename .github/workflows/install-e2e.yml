@@ -193,7 +193,13 @@ jobs:
         id: trusted-python-windows
         shell: pwsh
         run: |
-          $python = (Get-Command python -CommandType Application).Source
+          $python = Get-Command python -CommandType Application |
+            Select-Object -First 1 -ExpandProperty Source
+          if ([string]::IsNullOrWhiteSpace($python) -or
+              [IO.Path]::GetExtension($python) -ne ".exe" -or
+              -not (Test-Path -LiteralPath $python -PathType Leaf)) {
+            throw "Trusted Python must be one existing .exe path: $python"
+          }
           "path=$python" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Candidate clean install (Unix)
         if: matrix.platform != 'windows'
