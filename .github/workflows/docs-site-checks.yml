@@ -51,8 +51,17 @@ jobs:
         working-directory: website
 
       - name: Build Docusaurus
+        id: docs-build
         # Build only the default (en) locale in CI — the full bilingual
         # build runs in deploy-site.yml on push-to-main / release.
         # Same pattern Docusaurus uses internally (build:fast --locale en).
-        run: npm run build:fast
+        run: npm run build:fast 2>&1 | tee "$RUNNER_TEMP/docs-build.log"
         working-directory: website
+
+      - name: Upload Docusaurus failure log
+        if: failure() && steps.docs-build.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: docs-build-log
+          path: ${{ runner.temp }}/docs-build.log
+          retention-days: 1
