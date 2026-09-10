@@ -294,6 +294,15 @@ def _yolo_env_explicitly_false() -> bool:
     return raw is not None and not is_truthy_value(raw)
 
 
+def _global_off_applies_to_current_session() -> bool:
+    """Do not let global off leak across an active session-YOLO scope."""
+    current = get_current_session_key(default="")
+    with _lock:
+        scoped = bool(_session_yolo)
+        matching = current in _session_yolo
+    return not scoped or matching
+
+
 def is_approved(session_key: str, pattern_key: str) -> bool:
     """Session-scoped or permanent approval. Accepts the canonical key and the legacy
     regex-derived key so existing command_allowlist entries survive key migrations."""
@@ -1014,7 +1023,8 @@ def check_all_command_guards(command: str, env_type: str,
         result = _unattended_deny(command, ctx)
         if result is not None:
             return result
-    if approval_mode == "off" and not _yolo_env_explicitly_false():
+    if (approval_mode == "off" and not _yolo_env_explicitly_false()
+            and _global_off_applies_to_current_session()):
         return _approved()
     if _command_matches_permanent_allowlist(command):
         return _approved()

@@ -1565,7 +1565,7 @@ DEFAULT_CONFIG = {
         "timeout": 300,
         "cron_mode": "approve",
         "single_query_mode": "approve",
-        "unattended_mode": "approve",
+        "unattended_mode": "deny",
         # Extra rules appended to the smart-approval guardian's SYSTEM prompt, e.g. "Always ESCALATE
         # commands touching /etc".
         "smart_policy": "",
