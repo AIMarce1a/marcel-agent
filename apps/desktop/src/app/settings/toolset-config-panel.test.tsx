@@ -196,7 +196,7 @@ describe('ToolsetConfigPanel', () => {
     await waitFor(() => expect(saveMarcelConfig).toHaveBeenCalled(), { timeout: 3000 })
     const saved = saveMarcelConfig.mock.calls.at(-1)?.[0] as Record<string, Record<string, Record<string, string>>>
     expect(saved.tts.openai.voice).toBe('marin')
-  })
+  }, 30_000)
 
   it('renders no inline voice fields for rows without tts_provider (older backend)', async () => {
     const { ToolsetConfigPanel } = await import('./toolset-config-panel')

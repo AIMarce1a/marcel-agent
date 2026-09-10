@@ -152,15 +152,6 @@ def test_host_timeout_releases_pool_slot_while_protected_provider_is_still_block
     with cc._compress_admission_lock:
         assert cc._compress_admitted_count == 0
 
-    db = SessionDB(db_path=tmp_path / "state.db")
-    session_id = "F3_PROVIDER_OWNER_RELEASE"
-    db.create_session(session_id, source="cli")
-    agent = _build_agent_with_db(db, session_id)
-    agent._cached_system_prompt = "sys"
-    monkeypatch.setattr(
-        "agent.conversation_compression.resolve_context_compression_timeouts",
-        lambda cfg=None: (0.05, 0.1),
-    )
     # The host budget is intentionally tiny.  Warm the shared daemon pool first
     # so executor thread creation under a loaded CI runner cannot win the race
     # against the provider-start assertion below; this test is about releasing
@@ -179,12 +170,26 @@ def test_host_timeout_releases_pool_slot_while_protected_provider_is_still_block
         aux._run_protected_sync_provider_call(_blocked_provider, {})
         return msgs
 
-    agent.context_compressor.compress.side_effect = _compress_with_protected_provider
     live = [{"role": "user", "content": f"m{i}"} for i in range(20)]
 
     try:
-        returned, _sp = agent._compress_context(
-            live, "sys", approx_tokens=120_000
+        # Exercise the timeout owner directly.  Going through the full agent
+        # facade adds lease/database setup before the stub provider is reached;
+        # with a deliberately 50ms budget that makes provider_started depend on
+        # CI scheduling rather than testing provider ownership.
+        def _worker(fence):
+            with aux.aux_interrupt_protection(
+                cancel_check=lambda: fence.is_cancelled
+            ):
+                _compress_with_protected_provider(live)
+            return live, "sys"
+
+        returned, _sp = cc.run_compress_context_with_progress_timeout(
+            worker=_worker,
+            messages=live,
+            system_prompt_fallback="sys",
+            idle_timeout_seconds=0.05,
+            total_ceiling_seconds=0.1,
         )
         assert returned is live
         assert provider_started.wait(timeout=1)
