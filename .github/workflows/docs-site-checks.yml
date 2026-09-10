@@ -15,10 +15,9 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Docusaurus is qualified on the active Node LTS line. Node 26 is
-          # newer than the supported release matrix and failed during the
-          # production build after install and docs generation succeeded.
-          node-version: 22
+          # Keep CI on the exact runtime used to qualify the production build.
+          # Node 26 and Node 22 both failed after install and docs generation.
+          node-version: 24.13.0
           cache: npm
           cache-dependency-path: website/package-lock.json
 
