@@ -26,7 +26,12 @@ def client(tmp_path, monkeypatch):
     # client; single-flight behavior is asserted explicitly below.
     import marcel_cli.web_routers.local_models as local_models
     import threading
-    monkeypatch.setattr(local_models, "_QUICKSTART_LOCK", threading.Lock())
+    lock = threading.Lock()
+    monkeypatch.setattr(local_models, "_QUICKSTART_LOCK", lock)
+    # FastAPI keeps the endpoint callable (and its globals) in the route
+    # table created when web_server is first imported.  Rebind that globals
+    # entry too, so a worker from another TestClient cannot leak its guard.
+    local_models.local_models_quickstart.__globals__["_QUICKSTART_LOCK"] = lock
 
     test_client = TestClient(web_server.app)
     test_client.headers[web_server._SESSION_HEADER_NAME] = web_server._SESSION_TOKEN

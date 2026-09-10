@@ -362,12 +362,20 @@ def is_approval_bypass_active_for_session(session_key: str) -> bool:
     """Canonical three-source bypass check: process ``--yolo`` (frozen at import), the
     session-scoped gateway ``/yolo`` toggle, ``approvals.mode: off``. Pure bypass
     sub-expression only — hardline blocklist / permanent allowlist are the caller's job."""
-    return (_YOLO_MODE_FROZEN or is_session_yolo_enabled(session_key) or approval_context._get_approval_mode() == "off")
+    # Keep this predicate session-scoped; global mode belongs in the aggregate
+    # predicate below and must not leak into unrelated gateway/CUA sessions.
+    return _YOLO_MODE_FROZEN or is_session_yolo_enabled(session_key)
 
 
 def is_approval_bypass_active() -> bool:
     """Return whether the current approval context has bypass enabled."""
-    return is_approval_bypass_active_for_session(get_current_session_key(default=""))
+    return (
+        is_approval_bypass_active_for_session(get_current_session_key(default=""))
+        or (
+            approval_context._get_approval_mode() == "off"
+            and not _yolo_env_explicitly_false()
+        )
+    )
 
 
 # --- Result builders shared by the gates ----------------------------------------------------------------------------

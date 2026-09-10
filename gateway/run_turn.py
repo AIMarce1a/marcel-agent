@@ -3477,9 +3477,15 @@ class GatewayTurnMixin:
                     "Queued follow-up session-key resolution failed; reusing %s",
                     session_key or "?", exc_info=True,
                 )
-            next_message = await self._prepare_profile_scoped_inbound_message_text(
-                event=pending_event, source=next_source, history=updated_history, session_key=next_session_key,
-            )
+            # Voice was already transcribed by the drain monitor.  Reusing the
+            # prepared pending text avoids rebuilding the internal STT prompt
+            # from the event cache and leaking it into the recursive turn.
+            if self._pending_event_audio_paths(pending_event) and pending:
+                next_message = pending
+            else:
+                next_message = await self._prepare_profile_scoped_inbound_message_text(
+                    event=pending_event, source=next_source, history=updated_history, session_key=next_session_key,
+                )
             if next_message is None:
                 return result
             next_message_id = self._reply_anchor_for_event(pending_event)
