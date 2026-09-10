@@ -92,7 +92,13 @@ def unreviewed_remainder(path: str, line: str) -> str:
 
 
 def main() -> int:
-    files = subprocess.check_output(["git", "ls-files", "-co", "--exclude-standard"], cwd=ROOT, text=True).splitlines()
+    files = subprocess.check_output(
+        ["git", "ls-files", "-co", "--exclude-standard"],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    ).splitlines()
     violations: list[str] = []
     for relative in files:
         path = ROOT / relative
