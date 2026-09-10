@@ -161,6 +161,11 @@ def test_host_timeout_releases_pool_slot_while_protected_provider_is_still_block
         "agent.conversation_compression.resolve_context_compression_timeouts",
         lambda cfg=None: (0.05, 0.1),
     )
+    # The host budget is intentionally tiny.  Warm the shared daemon pool first
+    # so executor thread creation under a loaded CI runner cannot win the race
+    # against the provider-start assertion below; this test is about releasing
+    # an admitted slot after the provider has actually started.
+    cc._get_compress_timeout_executor().submit(lambda: None).result(timeout=1)
 
     provider_started = threading.Event()
     release_provider = threading.Event()

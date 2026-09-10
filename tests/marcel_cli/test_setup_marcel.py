@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from marcel_cli import setup as setup_module
+from marcel_cli import setup as setup_cli_module
 from marcel_cli.default_soul import DEFAULT_SOUL_MD
 from agent.onboarding import pending_google_workspace_directive
 from marcel_cli.setup_marcel import (
@@ -183,19 +183,19 @@ class MarcelSetupTests(unittest.TestCase):
       return False
 
     with (
-        patch.object(setup_module, "prompt_choice", side_effect=choose),
-        patch.object(setup_module, "prompt_checklist", side_effect=checklist),
-        patch.object(setup_module, "prompt", side_effect=text_prompt),
-        patch.object(setup_module, "prompt_yes_no", side_effect=yes_no),
-        patch.object(setup_module, "get_env_value", return_value=None),
+        patch.object(setup_cli_module, "prompt_choice", side_effect=choose),
+        patch.object(setup_cli_module, "prompt_checklist", side_effect=checklist),
+        patch.object(setup_cli_module, "prompt", side_effect=text_prompt),
+        patch.object(setup_cli_module, "prompt_yes_no", side_effect=yes_no),
+        patch.object(setup_cli_module, "get_env_value", return_value=None),
         patch.object(
-            setup_module, "save_env_value",
+            setup_cli_module, "save_env_value",
             side_effect=lambda name, value: saved_env.append((name, value))),
-        patch.object(setup_module, "save_config"),
-        patch.object(setup_module, "print_header"),
-        patch.object(setup_module, "print_success"),
-        patch.object(setup_module, "print_error"),
-        patch.object(setup_module, "_info"),
+        patch.object(setup_cli_module, "save_config"),
+        patch.object(setup_cli_module, "print_header"),
+        patch.object(setup_cli_module, "print_success"),
+        patch.object(setup_cli_module, "print_error"),
+        patch.object(setup_cli_module, "_info"),
         patch("marcel_cli.setup_tts._setup_tts_provider"),
         patch("marcel_cli.setup_marcel._choose_voice_model"),
         patch("marcel_cli.setup_marcel.ensure_marcel_soul"),
@@ -222,18 +222,18 @@ class MarcelSetupTests(unittest.TestCase):
     )
     with (
         patch("marcel_cli.config.is_managed", return_value=False),
-        patch.object(setup_module, "ensure_marcel_home"),
-        patch.object(setup_module, "is_interactive_stdin", return_value=True),
-        patch.object(setup_module, "load_config", return_value={}),
-        patch.object(setup_module, "get_marcel_home", return_value=Path("/tmp/marcel-test")),
-        patch.object(setup_module, "get_config_path", return_value=Path("/tmp/marcel-test/config.yaml")),
-        patch.object(setup_module, "_backup_config_file", return_value=None),
-        patch.object(setup_module, "_print_banner") as print_banner,
-        patch.object(setup_module, "_run_setup_steps") as run_steps,
-        patch.object(setup_module, "prompt_choice", side_effect=AssertionError("legacy menu opened")),
+        patch.object(setup_cli_module, "ensure_marcel_home"),
+        patch.object(setup_cli_module, "is_interactive_stdin", return_value=True),
+        patch.object(setup_cli_module, "load_config", return_value={}),
+        patch.object(setup_cli_module, "get_marcel_home", return_value=Path("/tmp/marcel-test")),
+        patch.object(setup_cli_module, "get_config_path", return_value=Path("/tmp/marcel-test/config.yaml")),
+        patch.object(setup_cli_module, "_backup_config_file", return_value=None),
+        patch.object(setup_cli_module, "_print_banner") as print_banner,
+        patch.object(setup_cli_module, "_run_setup_steps") as run_steps,
+        patch.object(setup_cli_module, "prompt_choice", side_effect=AssertionError("legacy menu opened")),
         patch("sys.argv", ["marcel", "setup"]),
     ):
-      setup_module._run_setup_wizard_impl(args)
+      setup_cli_module._run_setup_wizard_impl(args)
 
     self.assertIn("Marcel Setup Wizard", print_banner.call_args.args[0])
     self.assertEqual(run_steps.call_args.args[0][0][0], "Marcel Agent")
