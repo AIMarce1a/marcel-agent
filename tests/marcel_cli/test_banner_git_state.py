@@ -62,6 +62,8 @@ def test_check_via_local_git_ssh_fastpath_ahead_not_behind(tmp_path):
             return "b" * 40  # carried commit, differs from upstream tip
         if args == ["rev-parse", "--is-shallow-repository"]:
             return "false"
+        if args == ["rev-parse", "--is-shallow-repository"]:
+            return "false"
         raise AssertionError(f"unexpected git call: {args}")
 
     with (
@@ -89,6 +91,8 @@ def test_check_via_local_git_ssh_fastpath_genuinely_behind(tmp_path):
             return "git@github.com:NousResearch/hermes-agent.git"
         if args == ["rev-parse", "HEAD"]:
             return "b" * 40
+        if args == ["rev-parse", "--is-shallow-repository"]:
+            return "false"
         if args == ["rev-parse", "--is-shallow-repository"]:
             return "false"
         raise AssertionError(f"unexpected git call: {args}")
@@ -119,6 +123,8 @@ def test_check_via_local_git_ssh_fastpath_offline_keeps_sentinel(tmp_path):
             return "git@github.com:NousResearch/hermes-agent.git"
         if args == ["rev-parse", "HEAD"]:
             return "b" * 40
+        if args == ["rev-parse", "--is-shallow-repository"]:
+            return "false"
         if args == ["rev-parse", "--is-shallow-repository"]:
             return "false"
         raise AssertionError(f"unexpected git call: {args}")

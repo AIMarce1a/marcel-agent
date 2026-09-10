@@ -379,8 +379,16 @@ def _ensure_codex_session(agent) -> None:
     # explicit approval bypass (approvals.mode: off, /yolo, --yolo, MARCEL_YOLO_MODE) hands policy to codex's sandbox.
     auto_approve_requests = False
     try:
-        from tools.approval import is_approval_bypass_active
+        from tools.approval import is_approval_bypass_active, is_current_session_yolo_enabled, _YOLO_MODE_FROZEN
         auto_approve_requests = is_approval_bypass_active()
+        # Avoid a stale readonly config cache making a manual app-server run
+        # inherit an earlier process's ``off`` value.
+        from marcel_cli.config import load_config
+        from tools.approval_context import _normalize_approval_mode
+        cfg = load_config() or {}
+        configured_mode = _normalize_approval_mode((cfg.get("approvals") or {}).get("mode", "smart"))
+        yolo = _YOLO_MODE_FROZEN or is_current_session_yolo_enabled()
+        auto_approve_requests = yolo or configured_mode == "off"
     except Exception:
         logger.debug("codex app-server: approval-bypass lookup failed; keeping fail-closed default", exc_info=True)
     # Bridge codex JSON-RPC notifications (item/started, item/completed, item/agentMessage/delta, ...) into

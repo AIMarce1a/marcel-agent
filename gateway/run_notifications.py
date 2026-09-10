@@ -740,6 +740,9 @@ class GatewayNotificationsMixin:
                 "--inspect-only\n"
                 f"   (if it reports recoverable) {runtime_command('sessions recover')} "
                 f"--source {db_path} --output recovered-state.db\n"
+                # The full operator command is intentionally documented here;
+                # runtime_command may select a profile-aware launcher.
+                "   Equivalent: `marcel sessions recover --source <snapshot>`\n"
                 "   — recovery snapshots the damaged file first; do NOT run "
                 "`sqlite3 ... \".recover\"` against the live state.db, a "
                 "vulnerable sqlite3 CLI can corrupt it further\n"

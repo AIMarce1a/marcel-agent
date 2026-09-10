@@ -173,6 +173,7 @@ _CATEGORY_MERGE: Dict[str, str] = {
     "models_dev": "agent",
     "checkpoints": "agent",
     "approvals": "security",
+    "accounts": "security",
     "human_delay": "display",
     "dashboard": "display",
     "code_execution": "agent",

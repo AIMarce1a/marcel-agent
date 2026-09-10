@@ -218,12 +218,8 @@ class TestBusySessionAck:
         # VERIFY: No queueing — successful steer must NOT replay as next turn
         mock_merge.assert_not_called()
 
-        # VERIFY: Ack mentions steer wording
-        adapter._send_with_retry.assert_called_once()
-        call_kwargs = adapter._send_with_retry.call_args
-        content = call_kwargs.kwargs.get("content") or call_kwargs[1].get("content", "")
-        assert "Steered" in content or "steer" in content.lower()
-        assert "Interrupting" not in content
+        # Successful steering is silent: no extra busy acknowledgment.
+        adapter._send_with_retry.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_steer_mode_transcribes_voice_before_injection(self, monkeypatch):
@@ -259,9 +255,8 @@ class TestBusySessionAck:
         agent.steer.assert_called_once_with('"yönü teknik mimariye çevir"')
         agent.interrupt.assert_not_called()
         assert sk not in adapter._pending_messages
-        content = adapter._send_with_retry.call_args.kwargs["content"]
-        assert "Steered" in content
-        assert "Queued" not in content
+        # Successful voice steering is silent: no extra busy acknowledgment.
+        adapter._send_with_retry.assert_not_called()
 
 
     @pytest.mark.asyncio

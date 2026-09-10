@@ -177,13 +177,12 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
         "starlette==1.3.1",
         "python-multipart==0.0.32",  # FastAPI UploadFile/Form streaming uploads
     ),
-    # Pillow and firecrawl-anydoc are CORE deps; these entries self-heal lean/partial installs.
-    # Call sites use prompt=False so read_file / vision never block on input() mid-session.
+    # Pillow is a CORE dep; this entry self-heals lean/partial installs.
+    # Call sites use prompt=False so vision never blocks on input() mid-session.
     # Vision image-resize recovery (Pillow). Pillow is now a CORE dependency (pyproject `dependencies`), so
     # this entry is a belt-and-suspenders fallback for stripped/source-build installs that somehow dropped
     # it. See #40490.
     "tool.vision": ("Pillow==12.3.0",),
-    "tool.doc_extract": ("firecrawl-anydoc==0.2.4",),  # imports as `anydoc`; lockstep with pyproject
     # MCP client SDK for the cua-driver, so computer_use never dead-ends on `No module named 'mcp'`.
     "tool.computer_use": (
         "mcp==2.0.0",

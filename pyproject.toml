@@ -60,9 +60,8 @@ dependencies = [
   "ruamel.yaml==0.18.17",
   "requests==2.33.0",  # CVE-2026-25645
   "jinja2==3.1.6",
-  # Document extraction remains optional. The upstream firecrawl-anydoc
-  # package is not available from the package index used by Replit; the
-  # existing lazy loader keeps core installs functional without it.
+  # Document extraction remains optional. Its anydoc adapter is not a public
+  # dependency because it is unavailable from the package indexes we support.
   # Bumped from 2.12.5 to 2.13.4 to pull in pydantic-core 2.46.4.
   # pydantic-core 2.41.5 (pulled by 2.12.5) segfaults when the OpenAI SDK's
   # Responses API resource is exercised from a non-main thread, which is the
@@ -436,10 +435,6 @@ exclude-newer = "14 days"
 # cutoff can still brick installs. Exempting exact pins is pure brick-risk
 # removal at no supply-chain cost. Guarded by
 # tests/test_packaging_metadata.py::test_build_system_requires_exempt_from_exclude_newer.
-#
-# firecrawl-anydoc: same exact-pin shape (==0.2.4, hosted-OCR wiring PR).
-# The pin bump WAS the review; exclude-newer adds zero float protection to
-# an exact pin and would only delay the reviewed version 14 days.
 #
 # Every other exact-pinned package below: the release-day brick shape
 # (observed 2026-08-29 updating three long-running installs v0.20.0 ->

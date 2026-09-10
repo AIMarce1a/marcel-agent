@@ -2007,7 +2007,8 @@ class GatewayInboundMixin:
         """Transcribe a pending audio event once and cache the result on the event: the interrupt
         monitor and the pending-drain path both need it — one STT call and one echo per message."""
         if hasattr(event, "_gateway_pending_stt_text"):
-            return event._gateway_pending_stt_text, list(getattr(event, "_gateway_pending_stt_transcripts", []) or [])
+            transcripts = list(getattr(event, "_gateway_pending_stt_transcripts", []) or [])
+            return self._quoted_voice_transcripts(transcripts), transcripts
         audio_paths = self._pending_event_audio_paths(event)
         if not audio_paths:
             return user_text if user_text is not None else (getattr(event, "text", None) or None), []
@@ -2015,7 +2016,7 @@ class GatewayInboundMixin:
         enriched_text, successful_transcripts = await self._enrich_message_with_transcription(text, audio_paths)
         event._gateway_pending_stt_text = enriched_text
         event._gateway_pending_stt_transcripts = list(successful_transcripts)
-        return enriched_text, successful_transcripts
+        return self._quoted_voice_transcripts(successful_transcripts), successful_transcripts
 
     async def _echo_pending_stt_transcripts_once(
         self, event, adapter, source, transcripts: List[str], *, metadata=None,

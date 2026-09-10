@@ -165,6 +165,7 @@ class TestSetupWizardOpenclawIntegration:
                 setup_mod, "_offer_openclaw_migration", return_value=False
             ) as mock_migration,
             # Mock the actual setup sections so they don't run
+            patch.object(setup_mod, "setup_marcel"),
             patch.object(setup_mod, "setup_model_provider"),
             patch.object(setup_mod, "setup_terminal_backend"),
             patch.object(setup_mod, "setup_agent_settings"),
@@ -196,6 +197,7 @@ class TestSetupWizardOpenclawIntegration:
             patch("builtins.input", return_value=""),
             patch.object(setup_mod, "prompt_choice", return_value=1),
             patch.object(setup_mod, "_offer_openclaw_migration", return_value=True),
+            patch.object(setup_mod, "setup_marcel"),
             patch.object(setup_mod, "setup_model_provider"),
             patch.object(setup_mod, "setup_terminal_backend"),
             patch.object(setup_mod, "setup_agent_settings"),
@@ -320,6 +322,7 @@ class TestSetupWizardSkipsConfiguredSections:
             # User says No to all reconfig prompts
             patch.object(setup_mod, "prompt_yes_no", return_value=False),
             patch.object(setup_mod, "setup_model_provider") as mock_model,
+            patch.object(setup_mod, "setup_marcel"),
             patch.object(setup_mod, "setup_terminal_backend") as mock_terminal,
             patch.object(setup_mod, "setup_agent_settings") as mock_agent,
             patch.object(setup_mod, "setup_gateway") as mock_gateway,

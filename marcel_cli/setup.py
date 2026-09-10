@@ -694,7 +694,10 @@ def _run_full_setup(config: dict, marcel_home, *, is_existing: bool, migration_r
         return label, lambda: None if _skip(key, label) else run()
 
     _run_setup_steps([
-        _step("marcel", "Marcel Agent", lambda: setup_marcel(config)),
+        # Agent identity is established on first install; returning users'
+        # configured identity must not be prompted during reconfigure.
+        _step("marcel", "Marcel Agent", lambda: setup_marcel(config))
+        if not is_existing else ("Marcel Agent", lambda: None),
         _step("model", "Model & Provider", lambda: setup_model_provider(config)),
         _step("terminal", "Terminal Backend", lambda: setup_terminal_backend(config)),
         ("Messaging Platforms", _gateway_step),

@@ -28,6 +28,9 @@ class GeminiImageGenProvider(ImageGenProvider):
     provider_id = "gemini"
     label = "Google Gemini"
 
+    def name(self) -> str:
+        return self.label
+
     def is_available(self) -> bool:
         return bool(get_secret("GEMINI_API_KEY"))
 

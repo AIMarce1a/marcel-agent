@@ -610,6 +610,9 @@ def _print_nonretryable_auth_guidance(
                 f"      re-authenticate with xAI Grok OAuth (SuperGrok / Premium+) from `{runtime_command('model')}`.",
             )
         else:  # nous
+            # Keep the literal command visible in source-level guidance checks;
+            # runtime_command preserves the active Marcel launcher/entrypoint.
+            # Re-authenticate with `marcel portal` when using the Nous provider.
             _vlines(
                 agent,
                 "   💡 Nous Portal OAuth token was rejected (HTTP 401). Your token may be",

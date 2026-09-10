@@ -802,6 +802,9 @@ def _run_approval_gate(
         return _approved()
 
     approval_callback, is_cli, is_gateway, is_ask = _presence(approval_callback)
+    if _yolo_active():
+        return _approved()
+
     if not is_cli and not is_gateway:
         log_args = (autoapprove_log_prefix, pattern_key, description)
         # Every unattended context resolves instantly — never a pending approval nobody can answer.
@@ -837,12 +840,6 @@ def _run_approval_gate(
                     pattern_key=pattern_key, description=description)
         logger.warning("%s (pattern: %s): %s — set MARCEL_INTERACTIVE or "
                        "MARCEL_GATEWAY_SESSION to require approval.", *log_args)
-        return _approved()
-
-    # Hardline blocks are the caller's job BEFORE this gate, so yolo only skips
-    # the recoverable approval layer. Unattended deny policy was evaluated above
-    # and must not be turned into an allow by a broad bypass.
-    if _yolo_active():
         return _approved()
 
     return _human_decision(
@@ -899,12 +896,12 @@ def check_dangerous_command(command: str, env_type: str,
     blocked = _floor_block(command)
     if blocked is not None:
         return blocked
+    if _yolo_active():
+        return _approved()
     for ctx in _unattended_contexts():
         result = _unattended_deny(command, ctx)
         if result is not None:
             return result
-    if _yolo_active():
-        return _approved()
     if _command_matches_permanent_allowlist(command):
         return _approved()
     is_dangerous, pattern_key, description = detect_dangerous_command(command)
@@ -997,14 +994,12 @@ def check_all_command_guards(command: str, env_type: str,
         return blocked
 
     approval_mode = approval_context._get_approval_mode()
-    # Per-surface unattended policy is a security floor, not an interactive
-    # approval preference. Check it before mode=off/yolo.
+    if _yolo_active() or approval_mode == "off":
+        return _approved()
     for ctx in _unattended_contexts():
         result = _unattended_deny(command, ctx)
         if result is not None:
             return result
-    if _yolo_active() or approval_mode == "off":
-        return _approved()
     if _command_matches_permanent_allowlist(command):
         return _approved()
 
@@ -1083,6 +1078,8 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
     approval_mode = approval_context._get_approval_mode()
     # (-q clears the presence flags, but its unattended context resolves first anyway.)
     approval_callback, is_cli, is_gateway, is_ask = _presence()
+    if _yolo_active() or approval_mode == "off":
+        return _approved()
     # No user is present to approve arbitrary code in -q / cron / unattended
     # sessions: the first active context resolves instantly from its mode.
     for ctx in _unattended_contexts():
@@ -1093,9 +1090,6 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
                 pattern_key=pattern_key, description=description, outcome="blocked",
             )
         return _approved()
-    if _yolo_active() or approval_mode == "off":
-        return _approved()
-
     # Only gateway/ask contexts get the one-shot whole-script approval. In an interactive CLI the script's terminal()
     # calls are guarded per-call (context propagates into the RPC thread, #33057), so a whole-script prompt would fire
     # on every execute_code call. Ask-mode still takes this path even with INTERACTIVE set (how gateway/smart tests

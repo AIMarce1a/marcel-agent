@@ -28,7 +28,7 @@ class TestGatewayLifecyclePattern:
         "marcel gateway stop",
         "marcel gateway uninstall",
         "marcel  gateway  restart",         # double spaces
-        "Hermez Gateway Restart".lower().replace("z", "s"),  # case handled
+        "Marcel Gateway Restart".lower(),  # case handled
         "MARCEL GATEWAY RESTART",           # uppercase
     ])
     def test_marcel_gateway_commands(self, text):

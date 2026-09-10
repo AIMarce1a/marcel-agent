@@ -73,6 +73,8 @@ class TestApprovalsSaveBroadcast:
         )
 
     def test_approvals_mode_change_broadcasts(self, client, broadcast_calls):
+        client.put("/api/config", json={"config": {"approvals": {"mode": "manual"}}})
+        broadcast_calls.clear()
         resp = client.put("/api/config", json={"config": {"approvals": {"mode": "off"}}})
         assert resp.status_code == 200
         assert broadcast_calls, (
@@ -103,6 +105,8 @@ class TestApprovalsSaveBroadcast:
     def test_own_profile_named_default_broadcasts(self, client, broadcast_calls):
         """Dashboard/desktop often send ?profile=default for this process's
         own home. That is not an other-profile save and must still emit."""
+        client.put("/api/config", json={"config": {"approvals": {"mode": "manual"}}})
+        broadcast_calls.clear()
         resp = client.put(
             "/api/config?profile=default",
             json={"config": {"approvals": {"mode": "off"}}},
@@ -151,19 +155,21 @@ class TestApprovalsSaveBroadcast:
         broadcast_calls.clear()
 
         # Full-document replacement that drops the approvals block entirely:
-        # effective mode falls back to default (manual), so indicators must
-        # repaint.
+        # Effective mode falls back to the product default (off), so this is
+        # an effective no-op and must not repaint.
         resp = client.put(
             "/api/config/raw",
             json={"yaml_text": "display:\n  skin: default\n"},
         )
         assert resp.status_code == 200
-        assert broadcast_calls, (
-            "deleting the approvals block changes the effective mode and "
-            "must broadcast"
-        )
+        assert not broadcast_calls
 
     def test_raw_save_approvals_change_broadcasts(self, client, broadcast_calls):
+        client.put(
+            "/api/config/raw",
+            json={"yaml_text": "approvals:\n  mode: manual\n"},
+        )
+        broadcast_calls.clear()
         resp = client.put(
             "/api/config/raw",
             json={"yaml_text": "approvals:\n  mode: 'off'\n"},

@@ -29,7 +29,7 @@ _GLOBAL_DEFAULTS: dict[str, Any] = {
     "cleanup_progress": False,
     # Working-state text on text-rendering indicators (Slack assistant status): "full"/true = verb +
     # argument preview, "verb" = verb only (keeps paths out of shared channels), "off"/false = static.
-    "live_status": "off",
+    "live_status": "full",
 }
 
 # Tiers: HIGH = editing, personal/team use; MEDIUM = editing but customer-facing;
@@ -49,7 +49,7 @@ _TIER_MINIMAL = {**_TIER_LOW, "tool_preview_length": 0}
 
 _PLATFORM_DEFAULTS: dict[str, dict[str, Any]] = {
     # Mobile inbox: silently absorb follow-ups and deliver only the final response.
-    "telegram": {**_TIER_HIGH},
+    "telegram": {**_TIER_HIGH, "long_running_notifications": True},
     "discord": {**_TIER_HIGH, "reasoning_style": "subtext"},  # "-# " subtext reads as metadata
     # Slack: Bolt posts cannot be edited like CLI; "new"/"all" spam permanent lines.
     "slack": {**_TIER_MEDIUM, "tool_progress": "off", "long_running_notifications": False, "busy_ack_detail": False},

@@ -855,25 +855,31 @@ def _build_dynamic_image_schema() -> Dict[str, Any]:
     properties: Dict[str, Any] = {
         "prompt": static_props["prompt"],
         "aspect_ratio": static_props["aspect_ratio"],
-        "provider": {
-            "type": "string",
-            "enum": ["auto", "openai", "gemini", "xai"],
-            "description": (
-                "Backend override for this request only. auto uses the setup default. "
-                "Choose another connected provider for comparisons, explicit user requests, "
-                "or a better quality, speed, or cost tradeoff."
-            ),
-        },
-        "model": {
-            "type": "string",
-            "description": (
-                "Optional model or quality tier for this request only. Examples: "
-                "gpt-image-2-low, gpt-image-2-medium, gpt-image-2-high; "
-                "gemini-2.5-flash-image; grok-imagine-image, "
-                "grok-imagine-image-2.0, grok-imagine-image-quality."
-            ),
-        },
     }
+    # Provider/model overrides are meaningful only for the built-in FAL
+    # backend. A selected plugin owns both choices; advertising these knobs
+    # would imply capabilities its generate() contract does not provide.
+    if info.get("provider") == "FAL.ai":
+        properties.update({
+            "provider": {
+                "type": "string",
+                "enum": ["auto", "openai", "gemini", "xai"],
+                "description": (
+                    "Backend override for this request only. auto uses the setup default. "
+                    "Choose another connected provider for comparisons, explicit user requests, "
+                    "or a better quality, speed, or cost tradeoff."
+                ),
+            },
+            "model": {
+                "type": "string",
+                "description": (
+                    "Optional model or quality tier for this request only. Examples: "
+                    "gpt-image-2-low, gpt-image-2-medium, gpt-image-2-high; "
+                    "gemini-2.5-flash-image; grok-imagine-image, "
+                    "grok-imagine-image-2.0, grok-imagine-image-quality."
+                ),
+            },
+        })
     if can_edit:
         edit_clause = ", or edit / transform an existing image by passing image_url"
         properties["image_url"] = _IMAGE_URL_PARAM

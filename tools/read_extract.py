@@ -1,7 +1,7 @@
 """Document-to-text extraction for ``read_file``: stdlib Jupyter/DOCX/XLSX (always
 authoritative for those three), plus legacy Office/OpenDocument/RTF/EPUB/PDF when the
-optional ``firecrawl-anydoc`` package (imports as ``anydoc``) is installed. Malformed
-documents raise :class:`ExtractionError`; callers fall back to text/binary handling."""
+optional compatible ``anydoc`` adapter is manually available. Malformed documents
+raise :class:`ExtractionError`; callers fall back to text/binary handling."""
 
 from __future__ import annotations
 
@@ -62,8 +62,11 @@ _anydoc_failed_at: Optional[float] = None
 
 
 def _anydoc() -> Optional[Any]:
-    """Lazily import the optional anydoc converter (None when unavailable; failures retried after
-    ANYDOC_RETRY_SECONDS so one transient pip/network blip does not stick)."""
+    """Lazily import a manually provided optional anydoc converter.
+
+    The adapter is intentionally not a public dependency or lazy-install target:
+    its upstream distribution is unavailable on supported package indexes.
+    """
     global _anydoc_module, _anydoc_failed_at
     if _anydoc_module is not _ANYDOC_UNSET:
         return _anydoc_module
@@ -74,8 +77,6 @@ def _anydoc() -> Optional[Any]:
                 and time.monotonic() - _anydoc_failed_at < ANYDOC_RETRY_SECONDS):
             return None
         try:
-            from tools.lazy_deps import ensure as _lazy_ensure
-            _lazy_ensure("tool.doc_extract", prompt=False)  # read_file must never block on a prompt
             _anydoc_module = importlib.import_module("anydoc")
         except Exception:  # install failure, ImportError or a broken native binding
             _anydoc_failed_at = time.monotonic()
@@ -134,12 +135,12 @@ def _anydoc_missing_error(path: str) -> str:
     one that does gets the full story here, with the fix.
     """
     return (
-        f"Cannot convert {path!r}: this format needs the optional anydoc "
-        "converter, which is not installed (install blocked or first "
-        "attempt failed; retried every 5 minutes). Fix: `pip install "
-        "firecrawl-anydoc` in Marcel's environment, or convert the file "
-        "yourself via terminal (e.g. libreoffice --headless --convert-to "
-        "txt).")
+        f"Cannot convert {path!r}: no compatible optional anydoc adapter is "
+        "available. Marcel does not auto-install this unavailable adapter. "
+        "If you have a compatible adapter from a trusted source, make its "
+        "`anydoc` module available in Marcel's environment; otherwise convert "
+        "the file yourself via terminal (e.g. libreoffice --headless "
+        "--convert-to txt).")
 
 
 def _hosted_ocr_config() -> tuple:

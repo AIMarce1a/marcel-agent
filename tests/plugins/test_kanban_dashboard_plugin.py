@@ -44,6 +44,15 @@ def _load_plugin_router():
     return mod.router
 
 
+def _read_dashboard_bundle() -> str:
+    """Read the optional frontend artifact when the dashboard build ran."""
+    repo_root = Path(__file__).resolve().parents[2]
+    bundle = repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js"
+    if not bundle.is_file():
+        pytest.skip("Kanban dashboard bundle is produced by the frontend build job")
+    return bundle.read_text(encoding="utf-8")
+
+
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch):
     """Isolated MARCEL_HOME with an empty kanban DB."""
@@ -181,9 +190,7 @@ def test_tenant_filter(client):
 def test_dashboard_markdown_html_is_sanitized_before_render():
     """Markdown rendering must sanitize HTML before dangerouslySetInnerHTML."""
 
-    repo_root = Path(__file__).resolve().parents[2]
-    bundle = repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js"
-    js = bundle.read_text(encoding="utf-8")
+    js = _read_dashboard_bundle()
 
     assert "function sanitizeMarkdownHtml(html)" in js
     assert "MARKDOWN_ALLOWED_TAGS" in js
@@ -736,8 +743,7 @@ def test_dashboard_done_actions_prompt_for_completion_summary():
     they pin the contract end-to-end.
     """
 
-    repo_root = Path(__file__).resolve().parents[2]
-    js = (repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js").read_text()
+    js = _read_dashboard_bundle()
 
     import re
 
@@ -829,10 +835,7 @@ def test_dashboard_surfaces_ready_blocked_error_inline():
     row each render the parsed API ``detail`` so operators see *why*
     their click did nothing.
     """
-    repo_root = Path(__file__).resolve().parents[2]
-    bundle = (
-        repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js"
-    ).read_text()
+    bundle = _read_dashboard_bundle()
 
     # Helper that strips ``"409: {\"detail\":\"…\"}"`` down to the
     # human-readable message before it lands in any banner.
@@ -857,10 +860,7 @@ def test_dashboard_dependency_selects_use_value_change_handler():
     selectChangeHandler helper so their value actually lands on the
     underlying React state. Salvaged from #20019 @LeonSGP43.
     """
-    repo_root = Path(__file__).resolve().parents[2]
-    bundle = (
-        repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js"
-    ).read_text()
+    bundle = _read_dashboard_bundle()
 
     parent_select = (
         'value: newParent,\n'

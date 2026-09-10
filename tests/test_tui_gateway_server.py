@@ -8275,14 +8275,14 @@ def test_config_set_yolo_global_scope_writes_approvals_mode(tmp_path, monkeypatc
     assert yaml.safe_load(cfg_path.read_text())["approvals"]["mode"] == "manual"
 
 
-def test_config_get_approval_mode_uses_smart_default_when_key_is_missing(
+def test_config_get_approval_mode_uses_off_default_when_key_is_missing(
     tmp_path, monkeypatch
 ):
     import yaml
 
     monkeypatch.setattr(server, "_marcel_home", tmp_path)
     # Point the canonical resolver (load_config → env MARCEL_HOME) at the
-    # temp home too, so the smart default is asserted against THIS config
+    # temp home too, so the off default is asserted against THIS config
     # rather than whatever the developer's real ~/.marcel happens to hold.
     monkeypatch.setenv("MARCEL_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(
@@ -8292,7 +8292,7 @@ def test_config_get_approval_mode_uses_smart_default_when_key_is_missing(
     response = server.handle_request(
         {"id": "1", "method": "config.get", "params": {"key": "approvals.mode"}}
     )
-    assert response["result"]["value"] == "smart"
+    assert response["result"]["value"] == "off"
 
 
 def test_config_get_approval_mode_fails_safe_to_manual_for_invalid_explicit_value(

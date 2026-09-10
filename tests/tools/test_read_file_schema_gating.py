@@ -1,13 +1,9 @@
-"""read_file schema diet (#95681): static unconditional format list
-(anydoc bundled in core) + PDF-coverage teaching moved to the
-response-time warning.
+"""read_file schema diet and optional-adapter portability contract.
 
-Maintainer-directed: the schema advertised anydoc-gated formats
-unconditionally ("convert too when the optional anydoc converter is
-available") and pre-taught the EXTRACTION COVERAGE WARNING's own
-instructions. Now the format list renders only when anydoc is importable,
-and the warning (read_extract.py) is the single teacher — it fires exactly
-when pages are missing, with the page map and recovery commands.
+The schema keeps document formats stable while the optional anydoc adapter is
+loaded only when a compatible module is already available. The adapter is not
+a public dependency or lazy-install target, and missing support remains a clear
+non-crashing fallback.
 """
 import os
 import sys
@@ -19,10 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 class TestReadFileSchemaStatic(unittest.TestCase):
-    """Gate DROPPED by maintainer decision: anydoc is a core dependency
-    (bundled), so format support is stated unconditionally — a missing
-    converter is a broken install handled by read_extract's teaching
-    error, not a schema variant."""
+    """Document support is advertised without requiring a public adapter."""
 
     def test_formats_stated_unconditionally(self):
         from tools.file_tools import READ_FILE_SCHEMA
@@ -122,11 +115,14 @@ class TestReadFileSchemaStatic(unittest.TestCase):
         desc = READ_FILE_SCHEMA["description"]
         self.assertLess(desc.find("EPUB"), desc.find("Cannot read images/binary"))
 
-    def test_missing_anydoc_error_teaches_install(self):
+    def test_missing_anydoc_error_teaches_portable_fallback(self):
         from tools.read_extract import _anydoc_missing_error
 
         err = _anydoc_missing_error("x.epub")
-        self.assertIn("firecrawl-anydoc", err)
+        self.assertIn("compatible optional anydoc adapter", err)
+        self.assertIn("does not auto-install", err)
+        self.assertIn("convert the file yourself", err)
+        self.assertNotIn("firecrawl-anydoc", err)
         self.assertNotEqual(err, "Unsupported document type: 'x.epub'")
 
 
@@ -202,18 +198,15 @@ class TestNeedsOcrPath(unittest.TestCase):
         self.assertNotIn("hosted_ocr", out)
         self.assertNotIn("ocr-and-documents", out)
 
-    def test_pin_lockstep(self):
-        """pyproject core pin and lazy_deps self-heal pin must match."""
-        import re
+    def test_anydoc_is_not_public_dependency_or_lazy_target(self):
+        """The unavailable adapter must not make installs non-portable."""
         from pathlib import Path
 
         py = Path("pyproject.toml").read_text(encoding="utf-8")
         lz = Path("tools/lazy_deps.py").read_text(encoding="utf-8")
-        m1 = re.search(r'"firecrawl-anydoc==([\d.]+)"', py)
-        m2 = re.search(r'"firecrawl-anydoc==([\d.]+)"', lz)
-        self.assertIsNotNone(m1)
-        self.assertIsNotNone(m2)
-        self.assertEqual(m1.group(1), m2.group(1))
+        self.assertNotIn("firecrawl-anydoc", py)
+        self.assertNotIn("firecrawl-anydoc", lz)
+        self.assertNotIn("tool.doc_extract", lz)
 
 
 if __name__ == "__main__":
