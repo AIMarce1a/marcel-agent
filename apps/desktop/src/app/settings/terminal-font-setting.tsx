@@ -8,8 +8,8 @@ import {
 } from '@/app/right-sidebar/terminal/terminal-font'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { saveMarcelConfig } from '@/marcel'
 import { useI18n } from '@/i18n'
+import { saveMarcelConfig } from '@/marcel'
 import { notifyError } from '@/store/notifications'
 import type { MarcelConfigRecord } from '@/types/marcel'
 

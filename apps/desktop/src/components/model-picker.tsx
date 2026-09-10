@@ -1,19 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
-import { getLocalModelsStatus } from '@/marcel'
 import { useI18n } from '@/i18n'
 import { modelOptionsQueryKey, requestModelOptions } from '@/lib/model-options'
 import { modelSearchText } from '@/lib/model-search-text'
 import { currentPickerSelection } from '@/lib/model-status-label'
 import { normalize } from '@/lib/text'
 import { useStoreSelector } from '@/lib/use-session-slice'
+import { getLocalModelsStatus } from '@/marcel'
 import { $localModelsEnabled } from '@/store/local-models-flag'
 import { $localRuntimeJobs, runningModelDownloads, watchLocalRuntimeJobs } from '@/store/local-runtime-jobs'
 import type { LocalModelLoadProgress, ModelOptionProvider, ModelPricing } from '@/types/marcel'
 
-import type { MarcelGateway } from '../marcel'
 import { cn } from '../lib/utils'
+import type { MarcelGateway } from '../marcel'
 import { startManualOnboarding } from '../store/onboarding'
 
 import { InlineNotice } from './notifications'

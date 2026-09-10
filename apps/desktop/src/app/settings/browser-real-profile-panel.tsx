@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
-import { type ProfileScope, saveMarcelConfigRecord } from '@/marcel'
 import { useI18n } from '@/i18n'
+import { type ProfileScope, saveMarcelConfigRecord } from '@/marcel'
 import { notify, notifyError } from '@/store/notifications'
 
 import { marcelConfigCacheWriter, useMarcelConfigRecord } from '../hooks/use-config-record'

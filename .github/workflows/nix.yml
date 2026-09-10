@@ -114,6 +114,15 @@ jobs:
           purge-primary-key: never
 
       - name: nix flake check
+        id: flake-check
         # --print-build-logs: a check that fails then prints the assertion
         # that failed, and not only the derivation that failed to build.
-        run: nix flake check --print-build-logs
+        run: nix flake check --print-build-logs 2>&1 | tee "$RUNNER_TEMP/nix-flake-check.log"
+
+      - name: Upload Nix failure log
+        if: failure() && steps.flake-check.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nix-flake-check-log
+          path: ${{ runner.temp }}/nix-flake-check.log
+          retention-days: 1

@@ -106,8 +106,8 @@ export {
   GatewayReauthRequiredError,
   type GatewayWsConnection,
   type GatewayWsUrlResult,
-  type MarcelWebSocketUrlOptions,
   isGatewayReauthRequired,
+  type MarcelWebSocketUrlOptions,
   resolveGatewayWsUrl,
   type ResolveGatewayWsUrlDeps,
   type WebSocketAuthParam

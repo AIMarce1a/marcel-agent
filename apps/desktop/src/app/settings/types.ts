@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { MarcelGateway } from '@/marcel'
 import type { IconComponent } from '@/lib/icons'
+import type { MarcelGateway } from '@/marcel'
 import type { EnvVarInfo } from '@/types/marcel'
 
 export type SettingsView =

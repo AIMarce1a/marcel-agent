@@ -231,6 +231,7 @@ import { snapHudBounds } from './hud-snap'
 import { createHudSnapShortcut } from './hud-snap-shortcut'
 import { buildHudWindowUrl } from './hud-url'
 import { resolveHudWindowing } from './hud-windowing'
+import { migrateLegacyUserData } from './legacy-user-data-migration'
 import { createLinkTitleWindow, guardLinkTitleSession, readLinkTitleWindowTitle } from './link-title-window'
 import { ensureMainWindow } from './main-window-lifecycle'
 import {
@@ -460,7 +461,6 @@ import { readWindowsUserEnvVar } from './windows-user-env'
 import { isPackagedInstallPath as isPackagedInstallPathUnderRoots } from './workspace-cwd'
 import { readWslWindowsClipboardImage } from './wsl-clipboard-image'
 import { resolvePickerDefaultPath, setActiveGatewayProfile, setWslBridgeProfileState } from './wsl-path-bridge'
-import { migrateLegacyUserData } from './legacy-user-data-migration'
 
 const USER_DATA_OVERRIDE = process.env.MARCEL_DESKTOP_USER_DATA_DIR
 

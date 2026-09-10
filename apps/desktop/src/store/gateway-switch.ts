@@ -1,8 +1,8 @@
 import { atom } from 'nanostores'
 
 import { resetLiveRuntimeTracking } from '@/app/contrib/hooks/use-background-sync'
-import { resetSidebarBatchCapability } from '@/marcel'
 import { invalidateProfileScopedQueries } from '@/lib/query-client'
+import { resetSidebarBatchCapability } from '@/marcel'
 import { clearArtifactRegistry } from '@/store/artifacts'
 import { invalidateCronJobsRequests, setCronJobs } from '@/store/cron'
 import { resetSessionsLimit } from '@/store/layout'

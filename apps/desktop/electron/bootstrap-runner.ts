@@ -230,27 +230,34 @@ function cachedScriptPath(marcelHome, commit) {
 function downloadInstallScript(_ref, _destPath) {
   const scriptName = installScriptName()
   const url = `https://raw.githubusercontent.com/AdMind-ai/marcel-agent/${_ref}/scripts/${scriptName}`
+
   return new Promise((resolve, reject) => {
     fs.mkdirSync(path.dirname(_destPath), { recursive: true })
     const tmpPath = _destPath + '.tmp'
     const out = fs.createWriteStream(tmpPath)
-    https.get(url, res => {
-      if (res.statusCode !== 200) {
+    https
+      .get(url, res => {
+        if (res.statusCode !== 200) {
+          out.close()
+          fs.rmSync(tmpPath, { force: true })
+          reject(new Error(`Marcel installer download failed (${res.statusCode})`))
+
+          return
+        }
+
+        res.pipe(out)
+        out.on('finish', () =>
+          out.close(() => {
+            fs.renameSync(tmpPath, _destPath)
+            resolve(_destPath)
+          })
+        )
+      })
+      .on('error', error => {
         out.close()
         fs.rmSync(tmpPath, { force: true })
-        reject(new Error(`Marcel installer download failed (${res.statusCode})`))
-        return
-      }
-      res.pipe(out)
-      out.on('finish', () => out.close(() => {
-        fs.renameSync(tmpPath, _destPath)
-        resolve(_destPath)
-      }))
-    }).on('error', error => {
-      out.close()
-      fs.rmSync(tmpPath, { force: true })
-      reject(error)
-    })
+        reject(error)
+      })
   })
 }
 

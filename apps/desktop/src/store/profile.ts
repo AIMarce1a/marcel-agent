@@ -2,7 +2,6 @@ import { LOCAL_CONNECTION_ID } from '@marcel/shared'
 import { atom, batch, computed } from 'nanostores'
 
 import type { MarcelConnection } from '@/global'
-import { getProfiles, marcelApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/marcel'
 import { invalidateProfileScopedQueries } from '@/lib/query-client'
 import {
   arraysEqual,
@@ -14,6 +13,7 @@ import {
   storedStringRecord
 } from '@/lib/storage'
 import { withTimeout } from '@/lib/with-timeout'
+import { getProfiles, marcelApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/marcel'
 import { invalidateCronModelImpactScopeState } from '@/store/cron-model-impact-scope'
 import {
   $gateway,

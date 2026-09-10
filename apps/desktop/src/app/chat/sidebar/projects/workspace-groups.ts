@@ -1,6 +1,6 @@
 import type { MarcelGitWorktree } from '@/global'
-import type { ProjectInfo, SessionInfo } from '@/marcel'
 import { normalize } from '@/lib/text'
+import type { ProjectInfo, SessionInfo } from '@/marcel'
 
 import { rankSessions } from '../order'
 

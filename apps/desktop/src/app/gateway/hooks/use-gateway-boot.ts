@@ -3,12 +3,12 @@ import { useEffect, useRef } from 'react'
 
 import { shouldApplyPostBootProgressError } from '@/components/boot-failure-reauth'
 import type { MarcelConnection } from '@/global'
-import { MarcelGateway } from '@/marcel'
 import { translateNow } from '@/i18n'
 import { desktopDefaultCwd } from '@/lib/desktop-fs'
 import { decideLivenessForceClose, LIVENESS_REPROBE_DELAY_MS } from '@/lib/gateway-liveness-policy'
 import { reconnectBackoffDelayMs } from '@/lib/reconnect-backoff'
 import { BACKEND_BOOT_WAIT_TIMEOUT_MS, RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
+import { MarcelGateway } from '@/marcel'
 import {
   $desktopBoot,
   applyDesktopBootProgress,

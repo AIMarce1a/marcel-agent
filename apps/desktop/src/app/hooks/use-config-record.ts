@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getMarcelConfigRecord, type ProfileScope, profileScopeKey } from '@/marcel'
 import { queryClient, writeCache } from '@/lib/query-client'
+import { getMarcelConfigRecord, type ProfileScope, profileScopeKey } from '@/marcel'
 import type { MarcelConfigRecord } from '@/types/marcel'
 
 // One shared cache for the whole profile config record (`GET /api/config`).

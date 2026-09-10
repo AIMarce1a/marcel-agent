@@ -14,10 +14,10 @@ import './kanban.css'
 import {
   cn,
   Codicon,
-  type MarcelPlugin,
   host,
   type KeybindContribution,
   KEYBINDS_AREA,
+  type MarcelPlugin,
   PALETTE_AREA,
   type PaletteContribution,
   type RouteContribution,

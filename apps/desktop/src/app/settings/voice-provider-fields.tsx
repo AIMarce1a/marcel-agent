@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { getElevenLabsVoices, getMarcelConfigSchema, saveMarcelConfig } from '@/marcel'
 import { useI18n } from '@/i18n'
+import { getElevenLabsVoices, getMarcelConfigSchema, saveMarcelConfig } from '@/marcel'
 import { notifyError } from '@/store/notifications'
 import type { MarcelConfigRecord } from '@/types/marcel'
 

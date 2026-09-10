@@ -14,9 +14,9 @@ import type {
   DesktopUpdateStatus,
   DesktopVersionInfo
 } from '@/global'
-import { checkMarcelUpdate, getActionStatus, updateMarcel } from '@/marcel'
 import { translateNow } from '@/i18n'
 import { persistString, storedString } from '@/lib/storage'
+import { checkMarcelUpdate, getActionStatus, updateMarcel } from '@/marcel'
 import { $connectionsRegistry, refreshConnectionsRegistry } from '@/store/connections'
 import { reconnectGateway } from '@/store/gateway-reconnect'
 import { dismissNotification, notify } from '@/store/notifications'

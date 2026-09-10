@@ -1,7 +1,7 @@
 import type { ProfileScope } from '@/api/client'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { deleteProfile } from '@/marcel'
 import { useI18n } from '@/i18n'
+import { deleteProfile } from '@/marcel'
 import { retireLocalProfileGateways } from '@/store/gateway'
 import { $activeGatewayProfile, normalizeProfileKey, selectProfile, setActiveProfile } from '@/store/profile'
 import { dropTilesForProfile } from '@/store/session-states'
