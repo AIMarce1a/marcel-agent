@@ -54,6 +54,7 @@ class TestApprovalsSaveBroadcast:
         review-caught spam bug). Only an effective mode change may emit."""
         record = client.get("/api/config").json()
         assert "approvals" in record
+        assert record["approvals"]["mode"] == "off"
 
         first = client.put("/api/config", json={"config": record})
         assert first.status_code == 200
@@ -64,12 +65,12 @@ class TestApprovalsSaveBroadcast:
             "every settings autosave would walk all live sessions"
         )
 
-        flipped = {**record, "approvals": {**record["approvals"], "mode": "off"}}
-        resp = client.put("/api/config", json={"config": flipped})
+        off_again = {**record, "approvals": {**record["approvals"], "mode": "off"}}
+        resp = client.put("/api/config", json={"config": off_again})
         assert resp.status_code == 200
-        assert len(broadcast_calls) == 1, (
-            "an actual approvals.mode change in the GET-shaped record must "
-            "broadcast exactly once"
+        assert not broadcast_calls, (
+            "saving approvals.mode=off when effective mode is already off "
+            "must not broadcast"
         )
 
     def test_approvals_mode_change_broadcasts(self, client, broadcast_calls):

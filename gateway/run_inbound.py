@@ -2049,7 +2049,11 @@ class GatewayInboundMixin:
             await self._echo_pending_stt_transcripts_once(
                 event, adapter, source, transcripts, metadata=metadata, log_context=log_context
             )
-            return enriched_text or text, transcripts
+            # Pending voice is delivered as a user-facing steering/drain
+            # message, not as the internal enriched prompt used by a normal
+            # inbound turn.  Never leak that internal context into a queued
+            # interrupt when a transcript is available.
+            return self._quoted_voice_transcripts(transcripts) or enriched_text or text, transcripts
         except Exception as trans_exc:
             logger.warning("%s transcription failed: %s", log_context, trans_exc)
             return text, []

@@ -21,6 +21,12 @@ from fastapi.testclient import TestClient
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("MARCEL_HOME", str(tmp_path / ".marcel"))
     from marcel_cli import web_server
+    # The full suite may leave a daemon quickstart worker behind while its
+    # TestClient is torn down.  Isolate this route's process-global guard per
+    # client; single-flight behavior is asserted explicitly below.
+    import marcel_cli.web_routers.local_models as local_models
+    import threading
+    monkeypatch.setattr(local_models, "_QUICKSTART_LOCK", threading.Lock())
 
     test_client = TestClient(web_server.app)
     test_client.headers[web_server._SESSION_HEADER_NAME] = web_server._SESSION_TOKEN

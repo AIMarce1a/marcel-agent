@@ -174,6 +174,7 @@ _CATEGORY_MERGE: Dict[str, str] = {
     "checkpoints": "agent",
     "approvals": "security",
     "accounts": "security",
+    "whatsapp": "display",
     "human_delay": "display",
     "dashboard": "display",
     "code_execution": "agent",

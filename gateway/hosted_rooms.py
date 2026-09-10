@@ -1123,23 +1123,15 @@ def read_events(
         authority = {"gateway_id": str(room["authority_gateway_id"]), "epoch": int(room["authority_epoch"])}
         if since_seq > latest_seq:
             raise HostedRoomError("since_seq is ahead of the hosted room log")
+        # Fetch the requested prefix first, then bound the *serialized response*
+        # below.  Summing column byte lengths in SQL omits JSON punctuation and
+        # the surrounding page metadata, and can discard the first event before
+        # the accurate UTF-8 check gets a chance to fit it.
         rows = conn.execute(
-            f"""WITH candidates AS (
-                   SELECT {_EVENT_COLUMNS},
-                          SUM(
-                              LENGTH(CAST(event_id AS BLOB)) +
-                              LENGTH(CAST(kind AS BLOB)) +
-                              LENGTH(CAST(actor_json AS BLOB)) +
-                              LENGTH(CAST(payload_json AS BLOB))
-                          ) OVER (ORDER BY seq ASC) AS cumulative_bytes
-                     FROM hosted_room_events
-                    WHERE room_id=? AND seq>?
-                    ORDER BY seq ASC LIMIT ?
-               )
-               SELECT {_EVENT_COLUMNS}
-                 FROM candidates
-                WHERE cumulative_bytes<=?
-                ORDER BY seq ASC""", (room_id, since_seq, limit, MAX_LOG_PAGE_BYTES)).fetchall()
+            f"""SELECT {_EVENT_COLUMNS}
+                  FROM hosted_room_events
+                 WHERE room_id=? AND seq>?
+                 ORDER BY seq ASC LIMIT ?""", (room_id, since_seq, limit)).fetchall()
     events = [_event_from_row(row) for row in rows]
     def build_page(page_events: list[dict[str, Any]]) -> dict[str, Any]:
         cursor = page_events[-1]["seq"] if page_events else since_seq

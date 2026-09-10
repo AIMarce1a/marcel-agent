@@ -288,6 +288,12 @@ def _yolo_active() -> bool:
     return _YOLO_MODE_FROZEN or is_current_session_yolo_enabled()
 
 
+def _yolo_env_explicitly_false() -> bool:
+    """An explicitly supplied false-like env value must not request bypass."""
+    raw = os.getenv("MARCEL_YOLO_MODE")
+    return raw is not None and not is_truthy_value(raw)
+
+
 def is_approved(session_key: str, pattern_key: str) -> bool:
     """Session-scoped or permanent approval. Accepts the canonical key and the legacy
     regex-derived key so existing command_allowlist entries survive key migrations."""
@@ -994,12 +1000,14 @@ def check_all_command_guards(command: str, env_type: str,
         return blocked
 
     approval_mode = approval_context._get_approval_mode()
-    if _yolo_active() or approval_mode == "off":
+    if _yolo_active():
         return _approved()
     for ctx in _unattended_contexts():
         result = _unattended_deny(command, ctx)
         if result is not None:
             return result
+    if approval_mode == "off" and not _yolo_env_explicitly_false():
+        return _approved()
     if _command_matches_permanent_allowlist(command):
         return _approved()
 
@@ -1078,7 +1086,7 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
     approval_mode = approval_context._get_approval_mode()
     # (-q clears the presence flags, but its unattended context resolves first anyway.)
     approval_callback, is_cli, is_gateway, is_ask = _presence()
-    if _yolo_active() or approval_mode == "off":
+    if _yolo_active():
         return _approved()
     # No user is present to approve arbitrary code in -q / cron / unattended
     # sessions: the first active context resolves instantly from its mode.
@@ -1089,6 +1097,8 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
                 "subprocess calls that bypass shell-string approval checks). " + ctx.exec_tail,
                 pattern_key=pattern_key, description=description, outcome="blocked",
             )
+        return _approved()
+    if approval_mode == "off" and not _yolo_env_explicitly_false():
         return _approved()
     # Only gateway/ask contexts get the one-shot whole-script approval. In an interactive CLI the script's terminal()
     # calls are guarded per-call (context propagates into the RPC thread, #33057), so a whole-script prompt would fire

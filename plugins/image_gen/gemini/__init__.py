@@ -28,6 +28,7 @@ class GeminiImageGenProvider(ImageGenProvider):
     provider_id = "gemini"
     label = "Google Gemini"
 
+    @property
     def name(self) -> str:
         return self.label
 

@@ -38,7 +38,7 @@ _TIER_HIGH = {
     "tool_progress": "off", "show_reasoning": False, "tool_preview_length": 40,
     "streaming": None,  # follow global
     "interim_assistant_messages": False, "long_running_notifications": False, "busy_ack_detail": False,
-    "busy_steer_ack_enabled": False, "live_status": "off",
+    "busy_steer_ack_enabled": False, "live_status": "full",
 }
 _TIER_MEDIUM = {**_TIER_HIGH, "tool_progress": "off"}
 _TIER_LOW = {
@@ -49,7 +49,7 @@ _TIER_MINIMAL = {**_TIER_LOW, "tool_preview_length": 0}
 
 _PLATFORM_DEFAULTS: dict[str, dict[str, Any]] = {
     # Mobile inbox: silently absorb follow-ups and deliver only the final response.
-    "telegram": {**_TIER_HIGH, "long_running_notifications": True},
+    "telegram": {**_TIER_HIGH, "long_running_notifications": False},
     "discord": {**_TIER_HIGH, "reasoning_style": "subtext"},  # "-# " subtext reads as metadata
     # Slack: Bolt posts cannot be edited like CLI; "new"/"all" spam permanent lines.
     "slack": {**_TIER_MEDIUM, "tool_progress": "off", "long_running_notifications": False, "busy_ack_detail": False},

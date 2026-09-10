@@ -262,11 +262,14 @@ class TestAnydocInitLifecycle(unittest.TestCase):
         self.assertEqual(calls, ["anydoc"])
 
     def test_failed_reconciliation_does_not_import_unverified_binding(self):
+        # The unavailable distribution is never auto-installed. A failed
+        # import must leave the sentinel untouched rather than cache a
+        # partially imported/unverified binding.
         with mock.patch(
-            "tools.lazy_deps.ensure", side_effect=RuntimeError("wrong version")
-        ), mock.patch("importlib.import_module") as import_module:
+            "importlib.import_module", side_effect=ImportError("unavailable")
+        ) as import_module:
             self.assertIsNone(self.rex._anydoc())
-        import_module.assert_not_called()
+        import_module.assert_called_once_with("anydoc")
 
     def test_failed_load_is_retried_after_cooldown(self):
         fake = object()
