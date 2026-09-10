@@ -74,6 +74,11 @@ function runUnit(unit) {
   })
 }
 
+/** Keep the memory-heavy desktop jsdom suite off the shared CPU/memory lane. */
+function isExclusiveUnit(unit) {
+  return unit.pkg === 'apps/desktop' && unit.script === 'check:test:ui'
+}
+
 async function main() {
   const argv = process.argv.slice(2)
   const units = discoverUnits()
@@ -100,7 +105,8 @@ async function main() {
   for (const u of units) console.log(`  ${u.pkg} :: ${u.script}`)
   console.log('')
 
-  const queue = [...units]
+  const queue = units.filter((unit) => !isExclusiveUnit(unit))
+  const exclusive = units.filter(isExclusiveUnit)
   /** @type {{unit: {pkg: string, script: string}, code: number, output: string, ms: number}[]} */
   const results = []
 
@@ -118,6 +124,24 @@ async function main() {
       process.stdout.write(res.output.endsWith('\n') ? res.output : res.output + '\n')
       if (IS_CI) console.log('::endgroup::')
     }
+  }
+
+  // The desktop UI suite starts one Vitest worker per available CPU and has a
+  // large jsdom/module graph. Running it beside the other desktop checks lets
+  // four independent Node processes oversubscribe the runner; in CI that has
+  // previously left the UI child alive until the job killed it, without a
+  // Vitest summary. Run this one check first, alone, while retaining the
+  // normal bounded parallel schedule for every other blocking check.
+  for (const unit of exclusive) {
+    const res = await runUnit(unit)
+    results.push(res)
+    const label = `${res.unit.pkg} :: ${res.unit.script}`
+    const secs = (res.ms / 1000).toFixed(1)
+    const status = res.code === 0 ? 'PASS' : 'FAIL'
+    if (IS_CI) console.log(`::group::${status} ${label} (${secs}s)`)
+    else console.log(`----- ${status} ${label} (${secs}s) -----`)
+    process.stdout.write(res.output.endsWith('\n') ? res.output : res.output + '\n')
+    if (IS_CI) console.log('::endgroup::')
   }
 
   await Promise.all(Array.from({ length: Math.min(concurrency, units.length) }, worker))
