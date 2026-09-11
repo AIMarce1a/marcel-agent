@@ -2,12 +2,10 @@
 
 ## Scope and compatibility
 
-Marcel Router exposes an OpenAI-compatible API at `/v1`. The normative wire
+Marcel Router exposes an OpenAI-compatible API at `/api`. The normative wire
 contract is [`marcel-router-openapi.yaml`](marcel-router-openapi.yaml), OpenAPI
-3.1. This document defines the implemented MVP and the planned extensions that
-accompany that schema. The
-router is a contract and client-routing layer; it does not require changes to
-the imported Marcel runtime.
+3.1. The router is a contract and client-routing layer; it does not require
+changes to the imported Marcel runtime.
 
 The hosted Marcel Routing service is available at
 `https://marcel-agent.com/api/v1`. Account management, API keys, usage, and
@@ -19,16 +17,14 @@ billing are available at:
 - Usage: https://marcel-agent.com/usage
 - Billing: https://marcel-agent.com/billing
 
-Only these endpoints are implemented in the current MVP:
-`GET /health`, `GET /v1/models`, and `POST /v1/chat/completions`. Health is
-unauthenticated. Every implemented `/v1` operation requires the authorization
-described below.
-
-The OpenAPI schema also reserves these contract-only, planned endpoints:
-`POST /v1/images/generations`, `POST /v1/videos/generations`, and
-`GET /v1/jobs/{job_id}`. They are not implemented or generally available.
-Their implementation and release must be announced before clients treat them
-as available.
+The production contract includes `GET /healthz`, the public `GET /catalog`,
+model discovery, chat completions, image generation, realtime voice sessions
+and WebSockets, asynchronous video jobs, embeddings, moderation, reranking,
+text and document translation, and search/data tools. Account, billing, usage,
+and managed-agent operations are also described under `/portal`. Health,
+catalog, and portal authentication behavior follows the OpenAPI document;
+authenticated model and `/v1` operations require the authorization described
+below.
 
 ## Authentication and BYOK
 
@@ -68,7 +64,7 @@ silently falling back to another provider.
 
 Every model identifier is namespaced: `provider/model`, for example
 `openai/gpt-4o-mini`. The slash is required. Unnamespaced aliases are not part
-of the MVP. `GET /v1/models` returns only models usable by the caller and adds
+of the contract. `GET /v1/models` returns only models usable by the caller and adds
 a `marcel` object containing the provider, supported modalities/capabilities,
 and, where known, context/output limits and pricing metadata.
 
@@ -97,14 +93,41 @@ it returns SSE. Each event is `data: <JSON ChatCompletionChunk>` and completion
 is `data: [DONE]`; tool-call deltas can be split and are joined by `index`.
 When `stream_options.include_usage` is true, the terminal chunk includes usage.
 
-### Reserved media and job contract (planned, not implemented)
+## Media and realtime voice
 
-When implemented, image generation may complete immediately or return a `202`
-job. Video generation will return a `202` job. Clients will poll
-`GET /v1/jobs/{job_id}` until its terminal status is `succeeded`, `failed`, or
-`cancelled`. Failed jobs will include the same error shape used by HTTP
-failures. These semantics define the reserved contract, not current
-availability; images, videos, and jobs remain planned until explicitly released.
+`POST /v1/images/generations` provides OpenAI-compatible text-to-image
+generation. It accepts text prompts and returns generated image data; image
+inputs belong to chat vision support rather than this operation.
+
+Realtime voice uses an explicit two-step flow. Call
+`POST /v1/realtime/sessions` with recording and audio-processing consent to
+receive a one-use token, then upgrade `GET /v1/realtime/connect` to a
+WebSocket using the `marcel-realtime` subprotocol and token. The WebSocket
+relays OpenAI Realtime or Gemini Live client/provider events, including
+interruption events. Tokens expire after 60 seconds and sessions have provider
+spending, duration, message, and audio limits documented in the OpenAPI
+contract. Never put the token in a URL.
+
+Video generation is asynchronous: `POST /v1/videos` starts a Sora or Veo job
+and returns its video record. Use `GET /v1/videos/{id}` to inspect and refresh
+status, `DELETE /v1/videos/{id}` to remove the job and retained media, and
+`GET /v1/videos/{id}/content` to download completed video content. Job metadata
+and generated media expire according to the retention policy in the contract.
+
+## Embeddings, safety, translation, and tools
+
+The router also exposes OpenAI-compatible `POST /v1/embeddings`, text
+moderation through `POST /v1/moderations`, document reranking through
+`POST /v1/rerank`, and formatting-preserving text translation through
+`POST /v1/translate`. Layout-preserving PDF, DOCX, and PPTX translation is
+submitted with `POST /v1/documents/translations`; retrieve status with
+`GET /v1/documents/translations/{id}` and download the completed document with
+`GET /v1/documents/translations/{id}/content`.
+
+`GET /v1/tools` lists available search and data tools, and
+`POST /v1/tools/search` runs a normalized tool request. These router tools are
+distinct from Marcel agent plugins and their media behavior; agent plugins
+continue to use their existing interfaces.
 
 ## Errors and versioning
 
