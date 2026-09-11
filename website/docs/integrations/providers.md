@@ -14,7 +14,7 @@ You need at least one way to connect to an LLM. Use `marcel model` to switch pro
 
 | Provider | Setup |
 |----------|-------|
-| **Nous Portal** | `marcel model` (OAuth, subscription-based) |
+| **Nous Portal (optional)** | `marcel model` (OAuth, subscription-based) |
 | **OpenAI Codex** | `marcel model` → **ChatGPT or Codex Subscription** (ChatGPT OAuth, uses Codex models) |
 | **GitHub Copilot** | `marcel model` (OAuth device code flow, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`) |
 | **GitHub Copilot ACP** | `marcel model` (spawns local `copilot --acp --stdio`) |
@@ -72,7 +72,7 @@ In the `model:` config section, you can use either `default:` or `model:` as the
 
 ### Nous Portal
 
-[Nous Portal](https://portal.nousresearch.com) is Nous Research's unified subscription gateway and **the recommended way to run Marcel Agent**. One OAuth login covers 300+ frontier agentic models (Claude, GPT, Gemini, DeepSeek, Qwen, Kimi, GLM, MiniMax, Grok, ...) plus the [Tool Gateway](/user-guide/features/tool-gateway) (web search, image generation, TTS, browser automation) — billed against your Nous subscription instead of separate per-provider accounts.
+[Nous Portal](https://portal.nousresearch.com) is an optional Nous Research subscription gateway supported as one of Marcel's provider integrations. One OAuth login covers 300+ frontier agentic models (Claude, GPT, Gemini, DeepSeek, Qwen, Kimi, GLM, MiniMax, Grok, ...) plus the [Tool Gateway](/user-guide/features/tool-gateway) (web search, image generation, TTS, browser automation) — billed against your Nous subscription instead of separate per-provider accounts. Marcel also supports the other providers listed on this page.
 
 ```bash
 marcel setup --portal     # fresh install — OAuth + provider + gateway in one command
@@ -138,7 +138,7 @@ Several providers let you sign in to Marcel with a **consumer subscription** (Cl
 **Google Gemini.** There is currently no way to sign in to Marcel with a consumer Gemini subscription — the `gemini` provider takes an API key, and [Google Vertex AI](#google-vertex-ai) bills to your GCP project. A billing-enabled Google Cloud project is recommended for agent use; free-tier quotas are too small for long-running agent sessions. See the [Google Gemini guide](/guides/google-gemini).
 
 :::tip One subscription instead of five
-If you'd rather not track per-provider plan semantics at all, [Nous Portal](#nous-portal) covers 300+ models under a single subscription with one OAuth login.
+If you'd rather not track per-provider plan semantics at all, the optional [Nous Portal](#nous-portal) integration covers 300+ models under a single subscription with one OAuth login.
 :::
 
 ### Anthropic (Native)
@@ -1494,7 +1494,7 @@ model:
 
 | Use Case | Recommended |
 |----------|-------------|
-| **Just want it to work** | OpenRouter (default) or Nous Portal |
+| **Just want it to work** | Choose any provider with credentials that fit your needs, including OpenRouter or Nous Portal |
 | **Local models, easy setup** | Ollama |
 | **Production GPU serving** | vLLM or SGLang |
 | **Mac / no GPU** | Ollama or llama.cpp |

@@ -8,8 +8,8 @@ sidebar_position: 0
 
 Marcel Agent connects to external systems for AI inference, tool servers, IDE workflows, programmatic access, and more. These integrations extend what Marcel can do and where it can run.
 
-:::tip Start here
-If you only have time to set up one integration, set up [Nous Portal](/integrations/nous-portal) — a single OAuth login covers 300+ models plus the four Tool Gateway tools (web search, image generation, TTS, and browser automation).
+:::info Optional Nous Portal integration
+[Nous Portal](/integrations/nous-portal) is a supported optional integration. A single OAuth login covers 300+ models plus the four Tool Gateway tools (web search, image generation, TTS, and browser automation); choose it when that combination fits your needs.
 :::
 
 ## AI Providers & Routing

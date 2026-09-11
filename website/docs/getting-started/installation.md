@@ -17,7 +17,7 @@ This page describes the supported prerelease install paths. For safe upgrades,
 backups, and restoring a previous version, see **[Update and rollback](./update-rollback.md)**.
 
 ## Quick Install
-### With the Marcel Desktop installer on macOS or Windows (recommended)
+### With the Marcel Desktop installer on macOS or Windows
 To easily install the command-line and desktop applications, [download the Marcel Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
 
 ### Without Marcel Desktop:
@@ -85,14 +85,14 @@ marcel config get     # Inspect individual config values
 marcel setup          # Or run the full setup wizard to configure everything at once
 ```
 
-:::tip Fastest path: Nous Portal
-One subscription covers 300+ models plus the [Tool Gateway](/user-guide/features/tool-gateway) (web search, image generation, TTS, cloud browser). Skip the per-tool key juggling:
+:::info Optional Nous Portal integration
+Nous Portal is one supported provider and Tool Gateway integration. One subscription covers 300+ models plus the [Tool Gateway](/user-guide/features/tool-gateway) (web search, image generation, TTS, cloud browser):
 
 ```bash
 marcel setup --portal
 ```
 
-That logs you in, sets Nous as your provider, and turns on the Tool Gateway in one command.
+That logs you in, sets Nous as the selected provider, and turns on the Tool Gateway in one command. You can use `marcel model` to configure another provider instead.
 :::
 
 :::tip Already running Marcel on another machine?

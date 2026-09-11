@@ -9,7 +9,7 @@ description: "Browser-based administration panel for managing configuration, API
 The web dashboard is a browser-based UI for managing your Marcel Agent installation. Instead of editing YAML files or running CLI commands, you can configure settings, manage API keys, and monitor sessions from a clean web interface.
 
 :::tip
-Hosted-mode auth uses Nous Portal OAuth; if you also want the dashboard to talk to a real backend, `marcel setup --portal` wires up the model and tool gateway too. See [Nous Portal](/integrations/nous-portal).
+Hosted-mode auth can use the optional Nous Portal OAuth integration; if you also want the dashboard to talk to a real backend, `marcel setup --portal` wires up that provider and its Tool Gateway too. See [Nous Portal](/integrations/nous-portal).
 :::
 
 ## Quick Start
@@ -604,7 +604,7 @@ same auth gate as the rest of `/api/`.
 When the dashboard is bound to a public or non-loopback address — anything other than `127.0.0.1` / `localhost` — Marcel Agent engages an auth gate. Every request must carry a verified session cookie or it's bounced to the login page. Three providers ship in the box:
 
 - **[Username/password](#usernamepassword-provider-no-oauth-idp)** — the simplest way to put auth on a self-hosted / on-prem / homelab dashboard. No external identity provider. **Use it only on a trusted network or behind a VPN — not for public-internet exposure.**
-- **[OAuth (Nous Portal)](#default-provider-nous-research)** — for hosted deployments and any dashboard reachable over the public internet, and the recommended path for a [remote Marcel Desktop connection](#connecting-marcel-desktop-to-a-remote-backend). Every login is verified against your Nous account, so this is the provider suitable for internet-facing use.
+- **[OAuth (Nous Portal)](#nous-research-oauth-provider)** — an optional OAuth integration for hosted deployments or dashboards reachable over the public internet. Every login is verified against your Nous account.
 - **[Self-hosted OIDC](#self-hosted-oidc-provider)** — for bringing your own identity provider via standard OpenID Connect (Keycloak, Auth0, Okta, Google, GitHub via an OIDC bridge, etc.). No Nous Portal involved; suitable for public-internet exposure when fronted by a conformant OIDC server.
 
 Operator-owned dashboards bound to loopback are unaffected — no auth, no login page.
@@ -628,11 +628,11 @@ If the gate would engage but **no** `DashboardAuthProvider` is registered (no No
 
 When you run `marcel dashboard --host 0.0.0.0` **interactively** (a real terminal) and no provider is configured yet, Marcel doesn't just fail — it offers to set one up on the spot: pick **username & password** (writes `dashboard.basic_auth` to `config.yaml` and you're running in seconds) or **OAuth** (points you at `marcel dashboard register`). Non-interactive callers — Docker/s6, CI, piped runs — skip the prompt and hit the fail-closed error above, so an unattended deploy still never starts without auth.
 
-### Default provider: Nous Research
+### Nous Research OAuth provider (optional)
 
 The bundled `plugins/dashboard_auth/nous` plugin is **always installed** and auto-loaded. It auto-registers a `DashboardAuthProvider` named `nous` when a client ID is configured.
 
-Because every login is verified against Nous Portal and protected by your Nous account, **the Nous provider is the one suitable for exposing a dashboard to the public internet.**
+Because every login is verified against Nous Portal and protected by your Nous account, this optional provider can be used for exposing a dashboard to the public internet. Self-hosted OIDC and custom OAuth are supported alternatives.
 
 #### Registering a dashboard
 
@@ -724,7 +724,7 @@ If you don't want to wire up an OAuth identity provider — a self-hosted "just 
 It plugs into the same gate as the OAuth provider: the gate engages on a non-loopback bind, the login page renders a credential form for this provider (instead of a "Log in with X" button), and everything downstream of login — session cookies, transparent refresh, WS tickets, logout, the audit log — is identical to the OAuth path. Sessions are stateless HMAC-signed tokens the provider mints itself, so there's **no database and no external IDP**. Password hashing uses stdlib `scrypt` (no third-party dependency).
 
 :::warning Use this on trusted networks only — not the public internet
-The username/password provider is intended for self-hosted / on-prem / homelab dashboards on a **trusted network**, or reachable only over a **VPN**. It protects a single shared credential with no external identity provider, MFA, or per-user accounts behind it, so it is **not suitable for exposing a dashboard directly to the public internet**. For an internet-facing dashboard, use the [Nous Research provider](#default-provider-nous-research) (or your own [self-hosted OIDC](#self-hosted-oidc-provider) / [custom OAuth](#custom-providers) provider) instead.
+The username/password provider is intended for self-hosted / on-prem / homelab dashboards on a **trusted network**, or reachable only over a **VPN**. It protects a single shared credential with no external identity provider, MFA, or per-user accounts behind it, so it is **not suitable for exposing a dashboard directly to the public internet**. For an internet-facing dashboard, use a suitably configured OAuth provider such as the [Nous Research provider](#nous-research-oauth-provider), your own [self-hosted OIDC](#self-hosted-oidc-provider), or a [custom OAuth](#custom-providers) provider.
 :::
 
 #### Configuration
@@ -794,7 +794,7 @@ curl -s http://<host>:9119/api/status | jq '.auth_required, .auth_providers'
 # ["basic"]
 ```
 
-`GET /api/auth/me` then returns the verified session (`provider: basic`). Keep this behind a VPN — see the warning above; for a public host use the [Nous Research](#default-provider-nous-research) or [self-hosted OIDC](#self-hosted-oidc-provider) provider instead.
+`GET /api/auth/me` then returns the verified session (`provider: basic`). Keep this behind a VPN — see the warning above; for a public host use the [Nous Research](#nous-research-oauth-provider), [self-hosted OIDC](#self-hosted-oidc-provider), or another suitably configured OAuth provider instead.
 
 #### Writing your own password provider
 
@@ -1088,9 +1088,9 @@ The dashboard's React StatusPage shows the same fields under "Web server". A sid
 
 Marcel Desktop can drive a Marcel backend running on another machine (a VPS, a home server, a Mini behind Tailscale). In the app this lives under **Settings → Gateways → Remote gateway**, which asks for a **Remote URL** and a way to **Sign in**. (For the desktop app itself — install, settings, chat — see the [Marcel Desktop](/user-guide/desktop) page.)
 
-You protect the remote dashboard with one of the bundled auth providers, and the desktop app signs in against whichever one the backend advertises. For a backend reachable beyond your own machine — a VPS, a public host, anything internet-facing — the recommended provider is **OAuth (Nous Portal)** (register it with [`marcel dashboard register`](#registering-a-dashboard) and sign in with *Sign in with Nous Research*). The bundled [username/password provider](#usernamepassword-provider-no-oauth-idp) is the quickest option when the backend is on a trusted LAN or reachable only over a VPN, but is **not suitable for direct public-internet exposure**. Binding the dashboard to a non-loopback address engages its auth gate; once signed in, Desktop reuses the session for the chat WebSocket automatically — there is no token to copy or paste.
+You protect the remote dashboard with one of the bundled auth providers, and the desktop app signs in against whichever one the backend advertises. For a backend reachable beyond your own machine — a VPS, a public host, anything internet-facing — use a suitably configured OAuth provider, such as **OAuth (Nous Portal)** (register it with [`marcel dashboard register`](#registering-a-dashboard) and sign in with *Sign in with Nous Research*), self-hosted OIDC, or custom OAuth. The bundled [username/password provider](#usernamepassword-provider-no-oauth-idp) is an option when the backend is on a trusted LAN or reachable only over a VPN, but is **not suitable for direct public-internet exposure**. Binding the dashboard to a non-loopback address engages its auth gate; once signed in, Desktop reuses the session for the chat WebSocket automatically — there is no token to copy or paste.
 
-The recipe below uses the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Default provider: Nous Research](#default-provider-nous-research).
+The recipe below uses the username/password path because it is straightforward to stand up on a trusted network; for the optional Nous OAuth path see [Nous Research OAuth provider](#nous-research-oauth-provider).
 
 ### On the backend (the remote machine)
 
@@ -1114,7 +1114,7 @@ Prefer no plaintext at rest? Use `MARCEL_DASHBOARD_BASIC_AUTH_PASSWORD_HASH` wit
 If you run the dashboard as a systemd service, `~/.marcel/.env` is picked up automatically when the unit has `EnvironmentFile=%h/.marcel/.env`, so the credentials are in the environment at boot.
 
 :::warning
-The dashboard reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown here is for a trusted network — never expose a password-protected dashboard directly to the open internet. Put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL. Only devices on your tailnet can reach it. To reach a backend over the public internet, use the **OAuth (Nous Portal)** provider instead.
+The dashboard reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown here is for a trusted network — never expose a password-protected dashboard directly to the open internet. Put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL. Only devices on your tailnet can reach it. To reach a backend over the public internet, use a suitably configured OAuth provider such as [Nous Portal](#nous-research-oauth-provider), self-hosted OIDC, or custom OAuth.
 :::
 
 ### In Marcel Desktop

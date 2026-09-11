@@ -10,8 +10,8 @@ The API server exposes marcel-agent as an OpenAI-compatible HTTP endpoint. Any f
 
 Your agent handles requests with its full toolset (terminal, file operations, web search, memory, skills) and returns the final response. When streaming, tool progress indicators appear inline so frontends can show what the agent is doing.
 
-:::tip One backend covers models + tools
-Marcel itself needs a configured provider and tool backends for the API server to be useful. A [Nous Portal](/user-guide/features/tool-gateway) subscription handles both — 300+ models plus web/image/TTS/browser via the Tool Gateway. Run `marcel setup --portal` once before starting the API server and frontends like Open WebUI or LobeChat get a fully tool-equipped backend.
+:::info Provider and tool setup
+Marcel itself needs a configured provider and tool backends for the API server to be useful. [Nous Portal](/user-guide/features/tool-gateway) is one optional integration that provides 300+ models plus web/image/TTS/browser via the Tool Gateway. If you choose it, `marcel setup --portal` can configure it before starting the API server; other supported providers and tool backends work as well.
 :::
 
 ## Quick Start

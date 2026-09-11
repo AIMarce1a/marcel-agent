@@ -47,7 +47,7 @@ Pick the row that matches your goal:
 ---
 
 ## 1. Install Marcel Agent
-### With the Marcel Desktop installer on macOS or Windows (recommended)
+### With the Marcel Desktop installer on macOS or Windows
 To easily install the command-line and desktop applications, [download the Marcel Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
 
 ### Without Marcel Desktop:
@@ -85,20 +85,20 @@ The single most important setup step. Use `marcel model` to walk through the cho
 marcel model
 ```
 
-:::tip Easiest path: Nous Portal
-One subscription covers 300+ models plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, cloud browser). On a fresh install:
+:::info Optional Nous Portal integration
+Nous Portal is one supported way to provide inference and Tool Gateway access. One subscription covers 300+ models plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, cloud browser). On a fresh install:
 
 ```bash
 marcel setup --portal
 ```
 
-That logs you in, sets Nous as your provider, and turns on the Tool Gateway in one command.
+That logs you in, sets Nous as the selected provider, and turns on the Tool Gateway in one command. You can instead configure any provider from the catalog below.
 :::
 
 :::info Setup modes
 On a fresh install, `marcel setup` offers three modes:
 
-- **Quick Setup (Nous Portal)** — free OAuth login, no API keys; sets up a model plus the Tool Gateway tools. The recommended fast path.
+- **Quick Setup (Nous Portal)** — optional OAuth login, no API keys; sets up a model plus the Tool Gateway tools.
 - **Full Setup** — walk through every provider, tool, and option yourself (bring your own keys).
 - **Blank Slate** — everything starts **off** except the bare minimum needed to run an agent: **provider & model, the File Operations toolset, and the Terminal toolset**. No web, browser, code execution, vision, memory, delegation, cron, skills, plugins, or MCP servers — and compression, checkpoints, smart routing, and memory capture are all disabled. After the minimal baseline is applied, you choose one of two paths: **start with everything disabled** (finish now with the minimal agent), or **walk through all configurations** (opt in to tools, skills, plugins, MCP, and messaging). Pick this when you want a minimal, fully-controlled agent and intend to enable only exactly what you need.
 
@@ -109,7 +109,7 @@ Good defaults:
 
 | Provider | What it is | How to set up |
 |----------|-----------|---------------|
-| **Nous Portal** | Subscription-based, zero-config | OAuth login via `marcel model` |
+| **Nous Portal** | Optional subscription-based provider and Tool Gateway integration | OAuth login via `marcel model` |
 | **OpenAI Codex** | ChatGPT or Codex subscription, uses Codex models | Device code auth via `marcel model` → **ChatGPT or Codex Subscription** |
 | **Anthropic** | Claude models directly — Max plan + extra usage credits (OAuth), or API key for pay-per-token | `marcel model` → OAuth login (requires Max + extra credits), or an Anthropic API key |
 | **OpenRouter** | Multi-provider routing across many models | Enter your API key |
@@ -150,7 +150,7 @@ Good defaults:
 | **Vercel AI Gateway** | Vercel AI Gateway routing | Set `AI_GATEWAY_API_KEY` |
 | **Custom Endpoint** | VLLM, SGLang, Ollama, or any OpenAI-compatible API | Set base URL + API key |
 
-For most first-time users: choose a provider, accept the defaults unless you know why you're changing them. The full provider catalog with env vars and setup steps lives on the [Providers](../integrations/providers.md) page.
+Choose the provider that fits your account, deployment, and privacy needs; accept its defaults unless you know why you're changing them. The full provider catalog with env vars and setup steps lives on the [Providers](../integrations/providers.md) page.
 
 :::caution Minimum context: 64K tokens
 Marcel Agent requires a model with at least **64,000 tokens** of context. Models with smaller windows cannot maintain enough working memory for multi-step tool-calling workflows and will be rejected at startup. Most hosted models (Claude, GPT, Gemini, Qwen, DeepSeek) meet this easily. If you're running a local model, set its context size to at least 64K (e.g. `--ctx-size 65536` for llama.cpp or `-c 65536` for Ollama).

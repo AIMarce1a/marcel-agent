@@ -1,377 +1,1719 @@
 openapi: 3.1.0
 info:
-  title: Marcel Router API
-  version: 1.0.0
-  description: |
-    OpenAI-compatible, client-routed gateway contract for Marcel providers.
-    All paths are rooted at the router origin. Model IDs are namespaced as
-    `provider/model`; clients choose the target deterministically before sending
-    a request.
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.2.0
+  description: Marcel Routing OpenAI-compatible gateway
 servers:
-  - url: https://marcel-agent.com/api
-    description: Production Marcel Routing API
-security:
-  - bearerAuth: []
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: marcel
+    description: Marcel model routing operations
+  - name: tools
+    description: Search and data tool operations
+  - name: portal
+    description: Authenticated customer portal operations
 paths:
-  /health:
+  /healthz:
     get:
-      operationId: health
-      security: []
-      summary: Return router liveness and contract version
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
       responses:
-        '200':
-          description: Router is available
+        "200":
+          description: Healthy
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Health'
+                $ref: "#/components/schemas/HealthStatus"
+  /catalog:
+    get:
+      operationId: getPublicCatalog
+      tags: [marcel]
+      summary: Get the public Marcel provider, model, and tool catalog
+      responses:
+        "200":
+          description: Public routing catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCatalog"
   /v1/models:
     get:
-      operationId: listModels
-      summary: List models available to the caller
+      operationId: listMarcelModels
+      tags: [marcel]
+      summary: List available Marcel models
+      security:
+        - bearerAuth: []
       responses:
-        '200':
-          description: An OpenAI-style model list with Marcel metadata.
+        "200":
+          description: Available models
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/chat/completions:
+    post:
+      operationId: createMarcelChatCompletion
+      tags: [marcel]
+      summary: Create an OpenAI-compatible chat completion
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatCompletionRequest"
+      responses:
+        "200":
+          description: Chat completion or server-sent event stream
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatCompletion"
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/realtime/sessions:
+    post:
+      operationId: createRealtimeSession
+      tags: [marcel]
+      summary: Issue a one-use token for a Marcel realtime WebSocket
+      description: Requires explicit consent. The token expires after 60 seconds, can be used once, and never contains provider credentials. The session has a hard customer spending ceiling of $5 for OpenAI or $1 for Gemini; the connection closes at the ceiling and unused reserved credit is reconciled.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RealtimeSessionRequest"
+      responses:
+        "201":
+          description: Short-lived WebSocket token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+  /v1/realtime/connect:
+    get:
+      operationId: connectRealtime
+      tags: [marcel]
+      summary: WebSocket upgrade endpoint for OpenAI Realtime or Gemini Live
+      description: WebSocket endpoint. Use `new WebSocket(url, ["marcel-realtime", session.token])`; never place the token in a URL. Client messages and provider events are relayed bidirectionally, including interruption events. Maximum 30 minutes, 10,000 messages, and 25 MB audio per session.
+      externalDocs:
+        description: JavaScript client examples (consent, OpenAI session.update, Gemini setup, audio append, and interruption handling)
+        url: https://platform.openai.com/docs/guides/realtime
+      x-codeSamples:
+        - lang: javascript
+          label: OpenAI Realtime
+          source: |
+            const consent = { model: "openai/gpt-realtime-2.1",
+              recording_consent: true, audio_processing_consent: true };
+            const session = await fetch("/api/v1/realtime/sessions", {
+              method: "POST", headers: { Authorization: `Bearer ${marcelKey}`,
+              "Content-Type": "application/json" }, body: JSON.stringify(consent)
+            }).then(r => r.json());
+            const ws = new WebSocket("/api/v1/realtime/connect",
+              ["marcel-realtime", session.token]);
+            ws.onopen = () => {
+              ws.send(JSON.stringify({ type: "session.update",
+                session: { type: "realtime", instructions: "Be concise." }}));
+              // Send 16-bit PCM audio as base64.
+              ws.send(JSON.stringify({
+                type: "input_audio_buffer.append", audio: pcmBase64
+              }));
+            };
+            ws.onmessage = ({data}) => { const event = JSON.parse(data);
+              if (event.type === "input_audio_buffer.speech_started")
+                ws.send(JSON.stringify({ type: "response.cancel" })); };
+        - lang: javascript
+          label: Gemini Live
+          source: |
+            const session = await fetch("/api/v1/realtime/sessions", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${marcelKey}`,
+                "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model: "google/gemini-3.1-flash-live-preview",
+                recording_consent: true,
+                audio_processing_consent: true
+              })
+            }).then(r => r.json());
+            const ws = new WebSocket("/api/v1/realtime/connect",
+              ["marcel-realtime", session.token]);
+            ws.onopen = () => {
+              // Marcel locks setup.model to the model reserved above.
+              ws.send(JSON.stringify({ setup: {
+                model: "models/gemini-3.1-flash-live-preview",
+                generationConfig: { responseModalities: ["AUDIO"] }
+              }}));
+              ws.send(JSON.stringify({ realtimeInput: { audio: {
+                data: pcmBase64, mimeType: "audio/pcm;rate=16000"
+              }}}));
+            };
+            ws.onmessage = ({data}) => {
+              const event = JSON.parse(data);
+              if (event.serverContent?.interrupted)
+                console.log("Model output interrupted by the caller");
+            };
+      responses:
+        "101": { description: WebSocket protocol switch }
+  /v1/images/generations:
+    post:
+      operationId: createMarcelImage
+      tags: [marcel]
+      summary: Generate images from a text prompt
+      description: OpenAI-compatible text-to-image generation. This operation does not accept image inputs and is separate from chat vision support.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageGenerationInput"
+      responses:
+        "200":
+          description: Generated images
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageGenerationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/videos:
+    post:
+      operationId: createMarcelVideo
+      tags: [marcel]
+      summary: Start an asynchronous Sora or Veo video generation job
+      description: Prompts are safety-checked before submission. The maximum model-specific cost is reserved immediately and reconciled when the job completes or fails. Job metadata and generated media expire after 24 hours.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoGenerationInput"
+      responses:
+        "202":
+          description: Video job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoJob"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/videos/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getMarcelVideo
+      tags: [marcel]
+      summary: Inspect and refresh a video job
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current video job state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoJob"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+    delete:
+      operationId: deleteMarcelVideo
+      tags: [marcel]
+      summary: Delete a video job and its retained media
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Video job deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/videos/{id}/content:
+    get:
+      operationId: downloadMarcelVideo
+      tags: [marcel]
+      summary: Download completed video content
+      description: Streams completed media from Marcel's private object storage as an attachment. Media is copied from the provider promptly on completion and retained until the job expires.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Generated video file
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/BadRequest"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/embeddings:
+    post:
+      operationId: createMarcelEmbeddings
+      tags: [embeddings]
+      summary: Create OpenAI-compatible embeddings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmbeddingRequest"
+      responses:
+        "200":
+          description: Embeddings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbeddingResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/moderations:
+    post:
+      operationId: createMarcelModeration
+      tags: [safety]
+      summary: Moderate text with OpenAI omni-moderation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationRequest"
+      responses:
+        "200":
+          description: Moderation result
           content:
             application/json:
               schema:
                 type: object
-                required: [object, data]
-                properties:
-                  object: { const: list }
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Model'
-        '401':
-          $ref: '#/components/responses/Error'
-  /v1/chat/completions:
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/rerank:
     post:
-      operationId: createChatCompletion
-      summary: Create a chat completion
-      description: |
-        Set `stream` to true to receive `text/event-stream`. Each SSE `data:`
-        value is a ChatCompletionChunk; the stream terminates with
-        `data: [DONE]`. Tool calls are emitted in `delta.tool_calls` and may be
-        incrementally assembled by `index`. A final chunk may include `usage`
-        when `stream_options.include_usage` is true.
+      operationId: createMarcelRerank
+      tags: [rerank]
+      summary: Rerank documents with Jina
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChatCompletionRequest'
+              $ref: "#/components/schemas/RerankRequest"
       responses:
-        '200':
-          description: Completion or an SSE stream, according to `stream`.
+        "200":
+          description: Ranked documents
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChatCompletion'
-            text/event-stream:
-              schema:
-                type: string
-              examples:
-                chunk:
-                  value: "data: {\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}]}\n\n"
-                done:
-                  value: "data: [DONE]\n\n"
-        '400':
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
-        '429':
-          $ref: '#/components/responses/Error'
-        '500':
-          $ref: '#/components/responses/Error'
-  /v1/images/generations:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/translate:
     post:
-      operationId: createImageGeneration
-      summary: Create an image-generation job or result
+      operationId: createMarcelTranslation
+      tags: [translation]
+      summary: Translate text with DeepL while preserving formatting
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MediaGenerationRequest'
+              $ref: "#/components/schemas/TranslationRequest"
       responses:
-        '200':
-          description: Generation completed synchronously.
+        "200":
+          description: DeepL translations
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImageGeneration'
-        '202':
-          description: Generation accepted; poll the returned job.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Job'
-        '400':
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-  /v1/videos/generations:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/documents/translations:
     post:
-      operationId: createVideoGeneration
-      summary: Create an asynchronous video-generation job
+      operationId: createMarcelDocumentTranslation
+      tags: [translation]
+      summary: Upload a PDF, DOCX, or PPTX for layout-preserving translation
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/MediaGenerationRequest'
+              $ref: "#/components/schemas/DocumentTranslationUpload"
       responses:
-        '202':
-          description: Generation accepted; poll the returned job.
+        "202":
+          description: Translation accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Job'
-        '400':
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-  /v1/jobs/{job_id}:
+                $ref: "#/components/schemas/DocumentTranslation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "409":
+          description: Original idempotent request is still being created
+        "413":
+          description: Document exceeds the size limit
+        "415":
+          description: Unsupported document format
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/documents/translations/{id}:
     get:
-      operationId: getJob
-      summary: Retrieve an image or video generation job
+      operationId: getMarcelDocumentTranslation
+      tags: [translation]
+      summary: Get document translation status
+      security:
+        - bearerAuth: []
       parameters:
-        - name: job_id
+        - name: id
           in: path
           required: true
-          schema: { type: string }
+          schema:
+            type: string
+            format: uuid
       responses:
-        '200':
-          description: Current job state.
+        "200":
+          description: Current translation status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Job'
-        '401':
-          $ref: '#/components/responses/Error'
-        '404':
-          $ref: '#/components/responses/Error'
+                $ref: "#/components/schemas/DocumentTranslation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Translation not found
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/documents/translations/{id}/content:
+    get:
+      operationId: downloadMarcelDocumentTranslation
+      tags: [translation]
+      summary: Download a completed translated document
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Translated document binary
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Translation not found
+        "409":
+          description: Translation is not ready
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /v1/tools:
+    get:
+      operationId: listMarcelTools
+      tags: [tools]
+      summary: List available search and data tools
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Available tools
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/tools/search:
+    post:
+      operationId: runMarcelSearch
+      tags: [tools]
+      summary: Run a normalized search or financial data tool
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToolRequest"
+      responses:
+        "200":
+          description: Normalized tool response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/BudgetExceeded"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/ProviderError"
+  /portal/dashboard:
+    get:
+      operationId: getPortalDashboard
+      tags: [portal]
+      summary: Get the signed-in customer's balance and usage summary
+      responses:
+        "200":
+          description: Portal dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalDashboard"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/api-keys:
+    get:
+      operationId: listPortalApiKeys
+      tags: [portal]
+      summary: List API keys for the signed-in customer
+      responses:
+        "200":
+          description: API key list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createPortalApiKey
+      tags: [portal]
+      summary: Create a new API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiKeyRequest"
+      responses:
+        "201":
+          description: Newly created key, returned in full once
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedApiKey"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/api-keys/{id}:
+    delete:
+      operationId: revokePortalApiKey
+      tags: [portal]
+      summary: Revoke an API key
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: API key revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /portal/billing/checkout:
+    post:
+      operationId: createTopUpCheckout
+      tags: [portal]
+      summary: Create a Stripe Checkout session for a prepaid credit pack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopUpCheckoutRequest"
+      responses:
+        "200":
+          description: Stripe Checkout URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  sessionId:
+                    type: string
+                required: [url, sessionId]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/billing/verify:
+    get:
+      operationId: verifyTopUp
+      tags: [portal]
+      summary: Verify a completed Stripe Checkout session and credit the balance
+      parameters:
+        - in: query
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated credit balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  credited:
+                    type: boolean
+                  balanceUsd:
+                    type: number
+                required: [credited, balanceUsd]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/billing/portal:
+    post:
+      operationId: createBillingPortal
+      tags: [portal]
+      summary: Open Stripe billing history and receipt access
+      responses:
+        "200":
+          description: Stripe customer portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                required: [url]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/agent-service:
+    get:
+      operationId: getAgentService
+      tags: [agent-service]
+      summary: Get the signed-in customer's managed agent service
+      responses:
+        "200":
+          description: Agent service or null when not requested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    anyOf:
+                      - $ref: "#/components/schemas/AgentService"
+                      - type: "null"
+                required: [service]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/agent-service/checkout:
+    post:
+      operationId: createAgentServiceCheckout
+      tags: [agent-service]
+      summary: Create a Stripe subscription checkout for a managed Marcel agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentServiceRequest"
+      responses:
+        "200":
+          description: Stripe Checkout URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  sessionId:
+                    type: string
+                required: [url, sessionId]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/agent-service/verify:
+    get:
+      operationId: verifyAgentServiceCheckout
+      tags: [agent-service]
+      summary: Verify a managed-agent subscription checkout
+      parameters:
+        - in: query
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated agent service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentService"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/agent-service/cancellation:
+    post:
+      operationId: requestAgentServiceCancellation
+      tags: [agent-service]
+      summary: Request cancellation at the end of the current billing period
+      responses:
+        "200":
+          description: Updated agent service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentService"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/admin/agent-services:
+    get:
+      operationId: listAdminAgentServices
+      tags: [admin]
+      summary: List all managed agent requests
+      responses:
+        "200":
+          description: Managed agent requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentService"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Unauthorized"
+  /portal/admin/agent-services/{id}/activate:
+    post:
+      operationId: activateAdminAgentService
+      tags: [admin]
+      summary: Activate a provisioned managed agent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateAgentServiceRequest"
+      responses:
+        "200":
+          description: Activated managed agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentService"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /portal/usage:
+    get:
+      operationId: listPortalUsage
+      tags: [portal]
+      summary: List recent usage events and grouped model costs
+      responses:
+        "200":
+          description: Usage history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: API key
-  responses:
-    Error:
-      description: OpenAI-compatible error response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+      bearerFormat: MarcelClientApiKey
   schemas:
-    Health:
+    HealthStatus:
       type: object
-      required: [status, version]
       properties:
-        status: { const: ok }
-        version: { type: string, example: 1.0.0 }
-    Model:
+        status:
+          type: string
+      required:
+        - status
+    ModelMetadata:
       type: object
-      required: [id, object, created, owned_by, marcel]
+      properties:
+        capabilities:
+          type: array
+          items:
+            type: string
+        recommended_for:
+          type: array
+          items:
+            type: string
+        cost_tier:
+          type: string
+        speed_tier:
+          type: string
+        quality_tier:
+          type: string
+        context_window:
+          type: integer
+        supports_streaming:
+          type: boolean
+        supports_tool_calls:
+          type: boolean
+        supports_json_schema:
+          type: boolean
+      required:
+        - capabilities
+        - recommended_for
+        - cost_tier
+        - speed_tier
+        - quality_tier
+        - context_window
+        - supports_streaming
+        - supports_tool_calls
+        - supports_json_schema
+    MarcelModel:
+      type: object
       properties:
         id:
           type: string
-          pattern: '^[^/\s]+/.+$'
-          example: openai/gpt-4o-mini
-        object: { const: model }
-        created: { type: integer, format: int64 }
-        owned_by: { type: string, example: openai }
-        marcel:
-          $ref: '#/components/schemas/MarcelModelMetadata'
-    MarcelModelMetadata:
+        object:
+          type: string
+          enum: [model]
+        owned_by:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/ModelMetadata"
+      required: [id, object, owned_by, metadata]
+    ModelList:
       type: object
-      required: [provider, modalities, capabilities]
       properties:
-        provider: { type: string, example: openai }
-        modalities:
+        object:
+          type: string
+          enum: [list]
+        data:
           type: array
-          items: { type: string, enum: [text, image, video] }
-        capabilities:
-          type: object
-          properties:
-            chat: { type: boolean }
-            streaming: { type: boolean }
-            tools: { type: boolean }
-            json_schema: { type: boolean }
-            image_generation: { type: boolean }
-            video_generation: { type: boolean }
-        context_window: { type: integer }
-        max_output_tokens: { type: integer }
-        pricing:
-          type: object
-          additionalProperties: true
-    ChatCompletionRequest:
-      type: object
-      required: [model, messages]
-      properties:
-        model: { type: string, pattern: '^[^/\s]+/.+$' }
-        messages:
-          type: array
-          minItems: 1
           items:
-            $ref: '#/components/schemas/ChatMessage'
-        stream: { type: boolean, default: false }
-        stream_options:
-          type: object
-          properties:
-            include_usage: { type: boolean, default: false }
-        temperature: { type: number, minimum: 0, maximum: 2 }
-        max_tokens: { type: integer, minimum: 1 }
-        tools:
-          type: array
-          items: { $ref: '#/components/schemas/Tool' }
-        tool_choice:
-          oneOf:
-            - type: string
-              enum: [none, auto, required]
-            - type: object
-              required: [type, function]
-              properties:
-                type: { const: function }
-                function:
-                  type: object
-                  required: [name]
-                  properties: { name: { type: string } }
-        response_format:
-          oneOf:
-            - type: object
-              required: [type]
-              properties: { type: { enum: [text, json_object] } }
-            - type: object
-              required: [type, json_schema]
-              properties:
-                type: { const: json_schema }
-                json_schema:
-                  type: object
-                  required: [name, schema]
-                  properties:
-                    name: { type: string }
-                    description: { type: string }
-                    strict: { type: boolean }
-                    schema: { type: object, additionalProperties: true }
+            $ref: "#/components/schemas/MarcelModel"
+      required: [object, data]
     ChatMessage:
       type: object
-      required: [role]
       properties:
-        role: { type: string, enum: [system, developer, user, assistant, tool] }
+        role:
+          type: string
+          enum: [system, user, assistant, tool]
         content:
-          oneOf:
-            - type: string
-            - type: array
-              items: { type: object, additionalProperties: true }
-        name: { type: string }
-        tool_call_id: { type: string }
+          nullable: true
+        name:
+          type: string
+        tool_call_id:
+          type: string
         tool_calls:
           type: array
-          items: { $ref: '#/components/schemas/ToolCall' }
-    Tool:
+          items:
+            type: object
+      required: [role]
+    ChatTool:
       type: object
-      required: [type, function]
       properties:
-        type: { const: function }
+        type:
+          type: string
+          enum: [function]
         function:
           type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            parameters:
+              type: object
           required: [name, parameters]
-          properties:
-            name: { type: string }
-            description: { type: string }
-            parameters: { type: object, additionalProperties: true }
-            strict: { type: boolean }
-    ToolCall:
+      required: [type, function]
+    ChatCompletionRequest:
       type: object
-      required: [id, type, function]
       properties:
-        id: { type: string }
-        type: { const: function }
-        function:
-          type: object
-          required: [name, arguments]
-          properties:
-            name: { type: string }
-            arguments: { type: string, description: JSON-encoded function arguments }
+        model:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatTool"
+        tool_choice:
+          nullable: true
+        stream:
+          type: boolean
+        temperature:
+          type: number
+        max_tokens:
+          type: integer
+        response_format:
+          nullable: true
+      required: [model, messages]
+    RealtimeSessionRequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [openai/gpt-realtime-2.1, google/gemini-3.1-flash-live-preview]
+        recording_consent:
+          type: boolean
+          description: Explicit consent to record/process audio for this session
+        audio_processing_consent:
+          type: boolean
+          description: Explicit consent to send audio to the selected provider
+      required: [model, recording_consent, audio_processing_consent]
+    RealtimeSession:
+      type: object
+      properties:
+        token: { type: string }
+        expires_at: { type: string, format: date-time }
+        model: { type: string }
+        websocket_url: { type: string }
+      required: [token, expires_at, model, websocket_url]
+    ChatUsage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+        cost_usd:
+          type: number
+      required: [prompt_tokens, completion_tokens, total_tokens, cost_usd]
     ChatCompletion:
       type: object
-      required: [id, object, created, model, choices, usage]
       properties:
-        id: { type: string }
-        object: { const: chat.completion }
-        created: { type: integer, format: int64 }
-        model: { type: string }
+        id:
+          type: string
+        object:
+          type: string
+          enum: [chat.completion]
+        created:
+          type: integer
+        model:
+          type: string
         choices:
           type: array
           items:
             type: object
-            required: [index, message, finish_reason]
-            properties:
-              index: { type: integer }
-              message: { $ref: '#/components/schemas/ChatMessage' }
-              finish_reason: { type: [string, 'null'], enum: [stop, length, tool_calls, content_filter, null] }
-        usage: { $ref: '#/components/schemas/Usage' }
-    Usage:
+        usage:
+          $ref: "#/components/schemas/ChatUsage"
+      required: [id, object, created, model, choices, usage]
+    ImageGenerationInput:
       type: object
-      required: [prompt_tokens, completion_tokens, total_tokens]
       properties:
-        prompt_tokens: { type: integer }
-        completion_tokens: { type: integer }
-        total_tokens: { type: integer }
-    MediaGenerationRequest:
-      type: object
+        model:
+          type: string
+        prompt:
+          type: string
+          minLength: 1
+        n:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+        size:
+          type: string
+          enum: [1024x1024, 1024x1536, 1536x1024]
+        quality:
+          type: string
+          enum: [low, medium, high]
+        response_format:
+          type: string
+          enum: [url, b64_json]
       required: [model, prompt]
-      properties:
-        model: { type: string, pattern: '^[^/\s]+/.+$' }
-        prompt: { type: string, minLength: 1 }
-        n: { type: integer, minimum: 1, default: 1 }
-        size: { type: string, example: 1024x1024 }
-        response_format: { type: string, enum: [url, b64_json], default: url }
-    ImageGeneration:
+    GeneratedImage:
       type: object
-      required: [created, data]
       properties:
-        created: { type: integer, format: int64 }
+        url:
+          type: string
+          format: uri
+        b64_json:
+          type: string
+        revised_prompt:
+          type: string
+    ImageGenerationResponse:
+      type: object
+      properties:
+        created:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeneratedImage"
+      required: [created, data]
+    VideoGenerationInput:
+      type: object
+      properties:
+        model:
+          type: string
+          enum:
+            - openai/sora-2
+            - openai/sora-2-pro
+            - google/veo-3.1-fast
+            - google/veo-3.1
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        duration_seconds:
+          type: integer
+          enum: [4, 6, 8, 12]
+          default: 4
+          description: Sora supports 4, 8, or 12 seconds. Veo supports 4, 6, or 8 seconds.
+        resolution:
+          type: string
+          enum: [720p, 1024p, 1080p]
+          default: 720p
+          description: sora-2 supports 720p; sora-2-pro supports 720p and 1024p; Veo supports 720p and supports 1080p only for 8-second jobs.
+        aspect_ratio:
+          type: string
+          enum: ["16:9", "9:16"]
+          default: "16:9"
+      required: [model, prompt]
+    VideoJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        object:
+          type: string
+          enum: [video.job]
+        model:
+          type: string
+        status:
+          type: string
+          enum:
+            [
+              queued,
+              submitting,
+              in_progress,
+              completed,
+              failed,
+              deleting,
+              deleted,
+            ]
+        duration_seconds:
+          type: integer
+        resolution:
+          type: string
+          enum: [720p, 1024p, 1080p]
+        aspect_ratio:
+          type: string
+          enum: ["16:9", "9:16"]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        expires_at:
+          type: string
+          format: date-time
+        error:
+          anyOf:
+            - type: object
+              properties:
+                code:
+                  type: [string, "null"]
+                message:
+                  type: [string, "null"]
+            - type: "null"
+      required:
+        - id
+        - object
+        - model
+        - status
+        - duration_seconds
+        - resolution
+        - aspect_ratio
+        - created_at
+        - completed_at
+        - expires_at
+        - error
+    EmbeddingRequest:
+      type: object
+      properties:
+        model:
+          type: string
+        input:
+          oneOf:
+            - type: string
+            - type: array
+              minItems: 1
+              maxItems: 256
+              items:
+                type: string
+        encoding_format:
+          type: string
+          enum: [float, base64]
+        dimensions:
+          type: integer
+          minimum: 1
+      required: [model, input]
+    EmbeddingResponse:
+      type: object
+      properties:
+        object:
+          type: string
+        model:
+          type: string
         data:
           type: array
           items:
             type: object
-            properties:
-              url: { type: string, format: uri }
-              b64_json: { type: string }
-              revised_prompt: { type: string }
-    Job:
+        usage:
+          type: object
+      required: [object, model, data, usage]
+    ModerationRequest:
       type: object
-      required: [id, object, status, model, created_at]
       properties:
-        id: { type: string }
-        object: { const: job }
-        status: { type: string, enum: [queued, running, succeeded, failed, cancelled] }
-        model: { type: string }
-        created_at: { type: integer, format: int64 }
-        completed_at: { type: [integer, 'null'], format: int64 }
-        result:
-          type: [object, 'null']
-          additionalProperties: true
-        error:
+        model:
+          type: string
+          enum: [openai/omni-moderation-latest]
+        input:
           oneOf:
-            - $ref: '#/components/schemas/Error'
-            - type: 'null'
+            - type: string
+            - type: array
+              minItems: 1
+              items:
+                type: string
+      required: [input]
+    RerankRequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [jina/jina-reranker-v3.5]
+        query:
+          type: string
+        documents:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+        top_n:
+          type: integer
+          minimum: 1
+      required: [model, query, documents]
+    TranslationRequest:
+      type: object
+      properties:
+        text:
+          oneOf:
+            - type: string
+            - type: array
+              minItems: 1
+              maxItems: 50
+              items:
+                type: string
+        target_lang:
+          type: string
+        source_lang:
+          type: string
+        preserve_formatting:
+          type: boolean
+          default: true
+      required: [text, target_lang]
+    DocumentTranslation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        object:
+          type: string
+          enum: [document.translation]
+        status:
+          type: string
+          enum: [queued, translating, done, error, downloaded, expired]
+        file_name:
+          type: string
+        content_type:
+          type: string
+        file_size_bytes:
+          type: integer
+        source_lang:
+          type: [string, "null"]
+        target_lang:
+          type: string
+        billed_characters:
+          type: [integer, "null"]
+        cost_usd:
+          type: [number, "null"]
+        error:
+          type: [string, "null"]
+        expires_at:
+          type: string
+          format: date-time
+        downloaded_at:
+          type: [string, "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - object
+        - status
+        - file_name
+        - content_type
+        - file_size_bytes
+        - target_lang
+        - expires_at
+        - created_at
+        - updated_at
+    DocumentTranslationUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        target_lang:
+          type: string
+        source_lang:
+          type: string
+      required: [file, target_lang]
+    ToolList:
+      type: object
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            type: object
+      required: [object, data]
+    ToolRequest:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [brave, tavily, exa, perplexity, financial_datasets]
+        query:
+          type: string
+        max_results:
+          type: integer
+        ticker:
+          type: string
+        resource:
+          type: string
+      required: [provider, query]
+    ToolResponse:
+      type: object
+      properties:
+        provider:
+          type: string
+        query:
+          type: string
+        data:
+          nullable: true
+        usage:
+          type: object
+      required: [provider, query, data, usage]
     ErrorResponse:
       type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            type:
+              type: string
+            code:
+              type: string
+          required: [message, type, code]
       required: [error]
-      properties:
-        error: { $ref: '#/components/schemas/Error' }
-    Error:
+    ApiKey:
       type: object
-      required: [message, type]
       properties:
-        message: { type: string }
-        type: { type: string, example: invalid_request_error }
-        param: { type: [string, 'null'] }
-        code: { type: [string, 'null'] }
+        id:
+          type: string
+        name:
+          type: string
+        prefix:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: [string, "null"]
+          format: date-time
+        revokedAt:
+          type: [string, "null"]
+          format: date-time
+      required: [id, name, prefix, createdAt, lastUsedAt, revokedAt]
+    CreateApiKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+    TopUpCheckoutRequest:
+      type: object
+      properties:
+        pack:
+          type: string
+          enum: [starter, growth, scale]
+        autoReloadConsent:
+          type: boolean
+          description: Explicit consent to mandatory off-session balance reloads
+      required: [pack, autoReloadConsent]
+    CreateAgentServiceRequest:
+      type: object
+      properties:
+        agentName:
+          type: string
+          minLength: 2
+          maxLength: 60
+        region:
+          type: string
+          enum:
+            [
+              eu-frankfurt,
+              us-east-virginia,
+              us-west-oregon,
+              br-sao-paulo,
+              asia-singapore,
+              oceania-sydney,
+            ]
+        managedEmail:
+          type: boolean
+        existingEmail:
+          type: [string, "null"]
+          format: email
+        googleWorkspaceSetup:
+          type: boolean
+        setupCallLanguage:
+          type: [string, "null"]
+          enum: [en, it, pt, null]
+        autoReloadConsent:
+          type: boolean
+      required:
+        [
+          agentName,
+          region,
+          managedEmail,
+          existingEmail,
+          googleWorkspaceSetup,
+          setupCallLanguage,
+          autoReloadConsent,
+        ]
+    ActivateAgentServiceRequest:
+      type: object
+      properties:
+        telegramUsername:
+          type: string
+          minLength: 2
+          maxLength: 80
+        agentEmail:
+          type: [string, "null"]
+          format: email
+        adminNotes:
+          type: [string, "null"]
+          maxLength: 2000
+      required: [telegramUsername, agentEmail, adminNotes]
+    AgentService:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        customerEmail:
+          type: [string, "null"]
+        agentName:
+          type: string
+        region:
+          type: string
+        managedEmail:
+          type: boolean
+        existingEmail:
+          type: [string, "null"]
+        googleWorkspaceSetup:
+          type: boolean
+        setupCallLanguage:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            [
+              pending_payment,
+              pending_setup,
+              active,
+              cancellation_requested,
+              cancelled,
+            ]
+        stripeSubscriptionId:
+          type: [string, "null"]
+        telegramUsername:
+          type: [string, "null"]
+        agentEmail:
+          type: [string, "null"]
+        adminNotes:
+          type: [string, "null"]
+        cancellationRequestedAt:
+          type: [string, "null"]
+          format: date-time
+        activatedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        monthlyPriceUsd:
+          type: number
+        oneTimePriceUsd:
+          type: number
+      required:
+        [
+          id,
+          userId,
+          customerEmail,
+          agentName,
+          region,
+          managedEmail,
+          existingEmail,
+          googleWorkspaceSetup,
+          setupCallLanguage,
+          status,
+          stripeSubscriptionId,
+          telegramUsername,
+          agentEmail,
+          adminNotes,
+          cancellationRequestedAt,
+          activatedAt,
+          createdAt,
+          monthlyPriceUsd,
+          oneTimePriceUsd,
+        ]
+    CreatedApiKey:
+      allOf:
+        - $ref: "#/components/schemas/ApiKey"
+        - type: object
+          properties:
+            secret:
+              type: string
+          required: [secret]
+    UsageEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        model:
+          type: string
+        provider:
+          type: string
+        requestType:
+          type: string
+          enum: [chat, image]
+        imageQuantity:
+          type: ["integer", "null"]
+        imageSize:
+          type: ["string", "null"]
+        imageQuality:
+          type: ["string", "null"]
+        promptTokens:
+          type: integer
+        completionTokens:
+          type: integer
+        costUsd:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          model,
+          provider,
+          requestType,
+          imageQuantity,
+          imageSize,
+          imageQuality,
+          promptTokens,
+          completionTokens,
+          costUsd,
+          createdAt,
+        ]
+    ModelCost:
+      type: object
+      properties:
+        model:
+          type: string
+        requests:
+          type: integer
+        tokens:
+          type: integer
+        costUsd:
+          type: number
+      required: [model, requests, tokens, costUsd]
+    UsageReport:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsageEvent"
+        byModel:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelCost"
+      required: [events, byModel]
+    PortalDashboard:
+      type: object
+      properties:
+        balanceUsd:
+          type: number
+        spentUsd:
+          type: number
+        requestCount:
+          type: integer
+        tokenCount:
+          type: integer
+        hasPaymentMethod:
+          type: boolean
+        apiKeyCount:
+          type: integer
+        autoReloadStatus:
+          type: string
+          enum: [required, active, charging, failed]
+        autoReloadAmountUsd:
+          type: [number, "null"]
+        recentUsage:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsageEvent"
+      required:
+        [
+          balanceUsd,
+          spentUsd,
+          requestCount,
+          tokenCount,
+          hasPaymentMethod,
+          apiKeyCount,
+          autoReloadStatus,
+          autoReloadAmountUsd,
+          recentUsage,
+        ]
+    PublicCatalog:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              models:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarcelModel"
+            required: [id, name, models]
+        tools:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        video_models:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required: [providers, tools, video_models]
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid client API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BudgetExceeded:
+      description: Client budget exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Model or tool not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProviderError:
+      description: Upstream provider failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

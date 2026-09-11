@@ -35,8 +35,9 @@ provenance and its MIT notices are documented in [UPSTREAM.md](UPSTREAM.md) and
 
 ## Current foundation
 
-- OpenAI-compatible Marcel Router MVP for chat and model discovery, with planned
-  contract definitions for images, video, and asynchronous jobs.
+- OpenAI-compatible Marcel Router for chat, model discovery, image generation,
+  realtime voice, asynchronous video, embeddings, moderation, reranking,
+  translation, document translation, and search/data tools.
 - Configurable orchestrator plus an unbounded registry of named workers.
 - Worker-specific provider, model, tools/toolsets, concurrency, iteration, timeout, fallback, and
   budget metadata.
@@ -55,20 +56,26 @@ The router contract is documented in:
 - [docs/marcel-router.md](docs/marcel-router.md)
 - [docs/marcel-router-openapi.yaml](docs/marcel-router-openapi.yaml)
 
-MVP endpoints:
+Router endpoints:
 
 ```text
-Base URL  https://marcel-agent.com/api/v1
-GET       https://marcel-agent.com/api/v1/models
-POST      https://marcel-agent.com/api/v1/chat/completions
-```
-
-Planned media endpoints:
-
-```text
-POST /v1/images/generations
-POST /v1/videos/generations
-GET  /v1/jobs/{job_id}
+Base URL                       https://marcel-agent.com/api
+GET    /v1/models              Model catalog
+POST   /v1/chat/completions    Chat completions and streaming
+POST   /v1/images/generations  Text-to-image generation
+POST   /v1/realtime/sessions   One-use realtime voice session token
+GET    /v1/realtime/connect    OpenAI Realtime/Gemini Live WebSocket
+POST   /v1/videos              Asynchronous Sora/Veo video generation
+GET/DELETE /v1/videos/{id}     Video status and deletion
+GET    /v1/videos/{id}/content Completed video content
+POST   /v1/embeddings          Embeddings
+POST   /v1/moderations         Content moderation
+POST   /v1/rerank              Document reranking
+POST   /v1/translate           Text translation
+POST   /v1/documents/translations
+                               Asynchronous document translation
+GET    /v1/tools               Tool catalog
+POST   /v1/tools/search        Search/data tool execution
 ```
 
 Marcel normally chooses a concrete namespaced model such as `provider/model` before calling the
